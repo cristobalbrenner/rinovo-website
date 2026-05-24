@@ -60,7 +60,7 @@
   --duration-slow:  1100ms;
 
   /* --- Z-Index Layers --- */
-  --z-canvas:    0;
+  --z-canvas:    20;   /* Bird canvas floats ABOVE content — canvas is transparent so text shows through */
   --z-content:   10;
   --z-nav:       100;
   --z-cursor:    1000;
@@ -1200,17 +1200,17 @@ button {
 
 /* ============================================================
    SCROLL-TRIGGERED REVEAL BASE STATES
-   (GSAP will override these with its own transforms)
+   GSAP sets opacity/transform programmatically on scroll.
+   No CSS opacity:0 here — that hides text if JS is slow or fails.
+   GSAP's gsap.from() handles the initial hidden state itself.
    ============================================================ */
 .reveal-word {
-  opacity: 0;
-  transform: translateY(110%) rotateX(-12deg);
   display: inline-block;
+  will-change: transform, opacity;
 }
 
 .reveal-fade {
-  opacity: 0;
-  transform: translateY(24px);
+  will-change: transform, opacity;
 }
 
 /* ============================================================
