@@ -1,0 +1,93 @@
+---
+import '../styles/global.css';
+
+export interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'RINOVO — Design Build | Northern Virginia',
+  description = 'RINOVO is a high-end Design+Build firm in Northern Virginia. We don\'t renovate homes — we knit them. Your home already has a story. We help it unfold.'
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content={description} />
+  <meta name="theme-color" content="#1A1814" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/images/og-image.jpg" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Preconnect for Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <title>{title}</title>
+</head>
+<body>
+
+  <!-- Loading screen -->
+  <div class="loading-screen" id="loading-screen" aria-hidden="true">
+    <span class="loading__wordmark">RINOVO</span>
+    <div class="loading__bar" role="progressbar"></div>
+  </div>
+
+  <!-- Fixed WebGL canvas — Three.js mounts here -->
+  <canvas id="rinovo-canvas" aria-hidden="true"></canvas>
+
+  <!-- Misty transition overlay -->
+  <div id="mist-overlay" aria-hidden="true"></div>
+
+  <!-- Custom cursor (desktop only) -->
+  <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+  <div class="cursor-ring" id="cursor-ring" aria-hidden="true"></div>
+  <div class="cursor-hold-label" id="cursor-hold-label" aria-hidden="true">hold</div>
+
+  <!-- Navigation -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="nav__logo">
+      <span class="nav__wordmark">RINOVO</span>
+      <span class="nav__subtitle">Design Build</span>
+    </div>
+    <div class="nav__controls">
+      <div class="section-label" id="section-label" aria-live="polite"></div>
+      <button class="nav__sound-toggle" id="sound-toggle" aria-label="Toggle ambient sound" aria-pressed="false">
+        <div class="sound-wave is-muted" id="sound-wave">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <span class="nav__sound-label" id="sound-label" aria-hidden="true">♪ on</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Right-side dot navigation -->
+  <nav class="dot-nav" id="dot-nav" role="navigation" aria-label="Section navigation">
+    <button class="dot-nav__dot is-active" data-section="hero" aria-label="Go to: The Arrival"></button>
+    <button class="dot-nav__dot" data-section="philosophy" aria-label="Go to: Why We Exist"></button>
+    <button class="dot-nav__dot" data-section="process" aria-label="Go to: How We Work"></button>
+    <button class="dot-nav__dot" data-section="portfolio" aria-label="Go to: Our Work"></button>
+    <button class="dot-nav__dot" data-section="contact" aria-label="Go to: Start a Conversation"></button>
+  </nav>
+
+  <!-- Mobile scroll progress -->
+  <div class="mobile-progress" id="mobile-progress" aria-hidden="true"></div>
+
+  <!-- Main scrollable content -->
+  <div id="content">
+    <slot />
+  </div>
+
+
+</body>
+</html>

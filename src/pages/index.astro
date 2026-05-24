@@ -1,0 +1,378 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+
+  <!-- ================================================
+       OPENING VIDEO — real weaverbird
+       ================================================ -->
+  <div id="opening-video-container" aria-hidden="true">
+    <video
+      id="opening-video"
+      autoplay
+      muted
+      playsinline
+      preload="auto"
+    >
+      <!-- Replace with licensed weaverbird footage from Pond5 / Artgrid -->
+      <source src="/video/weaverbird-opening.webm" type="video/webm" />
+      <source src="/video/weaverbird-opening.mp4" type="video/mp4" />
+    </video>
+  </div>
+
+  <!-- ================================================
+       CHAPTER 1 — THE ARRIVAL (Hero)
+       ================================================ -->
+  <section class="section section--hero section-dark" id="hero" data-section="hero" data-section-label="Your Vision">
+    <div class="hero__ink-wash" aria-hidden="true"></div>
+    <div class="section__inner hero__content">
+
+      <h1 class="hero__wordmark" aria-label="RINOVO">
+        <span class="clip-text">
+          <span class="reveal-word">RINOVO</span>
+        </span>
+      </h1>
+
+      <p class="hero__tagline">
+        <span class="clip-text"><span class="reveal-word">Your home already has a story.</span></span>
+        <br />
+        <span class="clip-text"><span class="reveal-word">We help it unfold.</span></span>
+      </p>
+
+    </div>
+
+    <!-- Animated scroll invitation -->
+    <div class="hero__scroll-invite" aria-hidden="true">
+      <div class="hero__scroll-line"></div>
+      <span class="hero__scroll-text">Scroll to discover</span>
+    </div>
+  </section>
+
+  <!-- ================================================
+       PENCIL DIVIDER
+       ================================================ -->
+  <div class="section__inner" style="padding-top:0;padding-bottom:0;background:var(--rinovo-cream)">
+    <svg class="pencil-divider" viewBox="0 0 1200 12" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,6 C150,2 300,10 450,6 C600,2 750,10 900,6 C1050,2 1150,8 1200,6" />
+    </svg>
+  </div>
+
+  <!-- ================================================
+       CHAPTER 2 — THE PHILOSOPHY
+       ================================================ -->
+  <section class="section section--philosophy section-light" id="philosophy" data-section="philosophy" data-section-label="Our Philosophy">
+    <div class="section__inner">
+
+      <h2 class="philosophy__heading">
+        <span class="clip-text"><span class="reveal-word">We don't renovate homes.</span></span>
+        <br />
+        <span class="clip-text">
+          <span class="reveal-word">We
+            <span class="philosophy__underline-word">
+              knit
+              <svg viewBox="0 0 80 8" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M2,5 C20,2 40,7 60,4 C70,2 76,5 78,4" />
+              </svg>
+            </span>
+            them.
+          </span>
+        </span>
+      </h2>
+
+      <p class="philosophy__body reveal-fade">
+        Twenty years of building across two continents have taught us one thing above all: a home is not a project. It is the most personal space a person will ever inhabit — the place where daily life either lifts you or diminishes you. RINOVO exists to make it lift you.
+      </p>
+
+      <p class="philosophy__body reveal-fade" style="margin-top:var(--space-md)">
+        We are weaverbirds. We don't show up with a plan and impose it. We sit with you, listen until we understand what your home is trying to become, and then — thread by thread, decision by decision — we bring it into being. We never leave until the nest is perfect.
+      </p>
+
+      <p class="philosophy__body reveal-fade" style="margin-top:var(--space-md);font-style:italic;color:var(--rinovo-earth)">
+        Every thread we weave comes from you.
+      </p>
+
+    </div>
+  </section>
+
+  <!-- ================================================
+       PENCIL DIVIDER
+       ================================================ -->
+  <div class="section__inner" style="padding-top:0;padding-bottom:0;background:var(--rinovo-off-white)">
+    <svg class="pencil-divider" viewBox="0 0 1200 12" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,4 C200,8 400,2 600,5 C800,8 1000,3 1200,6" />
+    </svg>
+  </div>
+
+  <!-- ================================================
+       CHAPTER 3 — THE PROCESS
+       ================================================ -->
+  <section class="section section--process section-light" id="process" data-section="process" data-section-label="Our Process">
+    <div class="section__inner">
+
+      <h2 class="process__header reveal-fade">How we walk with you</h2>
+
+      <div class="process__phases">
+
+        <!-- Phase 1: Design -->
+        <div class="process__phase reveal-fade" data-phase="1">
+          <div class="process__sketch" aria-hidden="true">floor plan sketch</div>
+          <span class="process__phase-number">01</span>
+          <h3 class="process__phase-title">You imagine it.</h3>
+          <p class="process__phase-body">
+            Every project begins with listening. We sit with you in your home — your actual home, with its light and its rhythms and its particular stubbornness — and we ask: what is this space trying to become? Your vision guides everything that follows.
+          </p>
+          <span class="process__annotation" aria-hidden="true">your call →</span>
+
+          <!-- Connector to next phase -->
+          <div class="process__connector" aria-hidden="true">
+            <svg viewBox="0 0 60 2" preserveAspectRatio="none">
+              <path d="M0,1 C20,0.5 40,1.5 60,1" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Phase 2: Engineering -->
+        <div class="process__phase reveal-fade" data-phase="2">
+          <div class="process__sketch" aria-hidden="true">structural section</div>
+          <span class="process__phase-number">02</span>
+          <h3 class="process__phase-title">We make it real.</h3>
+          <p class="process__phase-body">
+            Your vision meets structural reality. Our engineers and designers work in concert — not in sequence — so the architecture serves your life rather than constraining it. Every dimension on these drawings has a reason that belongs to you.
+          </p>
+          <span class="process__annotation" aria-hidden="true">why this matters</span>
+
+          <div class="process__connector" aria-hidden="true">
+            <svg viewBox="0 0 60 2" preserveAspectRatio="none">
+              <path d="M0,1 C20,1.5 40,0.5 60,1" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Phase 3: Craft -->
+        <div class="process__phase reveal-fade" data-phase="3">
+          <div class="process__sketch" aria-hidden="true">hand + material</div>
+          <span class="process__phase-number">03</span>
+          <h3 class="process__phase-title">We build it together.</h3>
+          <p class="process__phase-body">
+            You are never handed off to a construction crew and forgotten. You are present for every material decision, every adjustment that the real world demands. The home being built is always, unmistakably, yours — because you never left the room.
+          </p>
+          <span class="process__annotation" aria-hidden="true">ask to see samples</span>
+
+          <div class="process__connector" aria-hidden="true">
+            <svg viewBox="0 0 60 2" preserveAspectRatio="none">
+              <path d="M0,1 C20,0.5 40,1.5 60,1" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Phase 4: Home -->
+        <div class="process__phase reveal-fade" data-phase="4">
+          <div class="process__sketch" aria-hidden="true">finished room corner</div>
+          <span class="process__phase-number">04</span>
+          <h3 class="process__phase-title">You live it.</h3>
+          <p class="process__phase-body">
+            The morning light falls exactly where it should. The room sounds different now — better. Something has changed, deeply, in how your home feels to move through. This is what we were building toward from the very first conversation.
+          </p>
+          <span class="process__annotation" aria-hidden="true">this is yours now</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================
+       PENCIL DIVIDER
+       ================================================ -->
+  <div style="background:var(--rinovo-charcoal);padding:0 var(--space-lg)">
+    <svg class="pencil-divider" viewBox="0 0 1200 12" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,7 C300,3 600,9 900,5 C1050,3 1150,7 1200,5" />
+    </svg>
+  </div>
+
+  <!-- ================================================
+       CHAPTER 4 — THE PORTFOLIO
+       ================================================ -->
+  <section class="section section--portfolio section-dark" id="portfolio" data-section="portfolio" data-section-label="The Work">
+    <div class="section__inner">
+
+      <div class="portfolio__header">
+        <svg class="portfolio__brushstroke" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M-20,50 C200,20 500,70 800,40 C1000,20 1150,55 1220,45" />
+        </svg>
+        <h2 class="portfolio__title reveal-fade">What we've built together</h2>
+      </div>
+
+      <div class="portfolio__grid">
+
+        <!-- Card 1 -->
+        <article class="project-card" data-project="hargrove" tabindex="0" role="button" aria-label="The Hargrove Home — hold to reveal walkthrough">
+          <img
+            class="project-card__image"
+            src="/images/projects/hargrove-cover.jpg"
+            alt="The Hargrove Home — McLean, Virginia"
+            loading="lazy"
+          />
+          <video class="project-card__video" muted loop playsinline>
+            <source src="/video/projects/hargrove-walkthrough.mp4" type="video/mp4" />
+          </video>
+          <div class="project-card__hold-ring" aria-hidden="true">
+            <svg viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="35" />
+            </svg>
+          </div>
+          <div class="project-card__swatch" aria-hidden="true">White oak</div>
+          <div class="project-card__info">
+            <span class="project-card__name">The Hargrove Home</span>
+            <span class="project-card__location">McLean, Virginia — 2024</span>
+            <span class="project-card__material">White oak, Calacatta marble, hand-applied plaster</span>
+          </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="project-card" data-project="aldridge" tabindex="0" role="button" aria-label="The Aldridge Home — hold to reveal walkthrough">
+          <img
+            class="project-card__image"
+            src="/images/projects/aldridge-cover.jpg"
+            alt="The Aldridge Home — Arlington, Virginia"
+            loading="lazy"
+          />
+          <video class="project-card__video" muted loop playsinline>
+            <source src="/video/projects/aldridge-walkthrough.mp4" type="video/mp4" />
+          </video>
+          <div class="project-card__hold-ring" aria-hidden="true">
+            <svg viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="35" />
+            </svg>
+          </div>
+          <div class="project-card__swatch" aria-hidden="true">Soapstone</div>
+          <div class="project-card__info">
+            <span class="project-card__name">The Aldridge Home</span>
+            <span class="project-card__location">Arlington, Virginia — 2024</span>
+            <span class="project-card__material">Soapstone, blackened steel, reclaimed brick</span>
+          </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="project-card" data-project="vance" tabindex="0" role="button" aria-label="The Vance Home — hold to reveal walkthrough">
+          <img
+            class="project-card__image"
+            src="/images/projects/vance-cover.jpg"
+            alt="The Vance Home — Great Falls, Virginia"
+            loading="lazy"
+          />
+          <video class="project-card__video" muted loop playsinline>
+            <source src="/video/projects/vance-walkthrough.mp4" type="video/mp4" />
+          </video>
+          <div class="project-card__hold-ring" aria-hidden="true">
+            <svg viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="35" />
+            </svg>
+          </div>
+          <div class="project-card__swatch" aria-hidden="true">Walnut</div>
+          <div class="project-card__info">
+            <span class="project-card__name">The Vance Home</span>
+            <span class="project-card__location">Great Falls, Virginia — 2023</span>
+            <span class="project-card__material">Oiled walnut, aged brass, hand-honed limestone</span>
+          </div>
+        </article>
+
+      </div>
+
+      <p class="reveal-fade" style="margin-top:var(--space-lg);font-family:var(--font-hand);font-size:1rem;color:var(--rinovo-stone);opacity:0.7;text-align:center">
+        hold any project to see inside
+      </p>
+
+    </div>
+  </section>
+
+  <!-- ================================================
+       CHAPTER 5 — THE CONVERSATION (Contact)
+       ================================================ -->
+  <section class="section section--contact section-light" id="contact" data-section="contact" data-section-label="Let's Begin">
+    <div class="section__inner">
+
+      <h2 class="contact__heading reveal-fade">
+        Your home is ready to be more.<br />
+        <em style="font-style:italic;color:var(--rinovo-earth)">So are we.</em>
+      </h2>
+
+      <div class="contact__form-wrapper">
+        <form class="contact__form" name="contact" method="POST" data-netlify="true" action="/thank-you">
+          <input type="hidden" name="form-name" value="contact" />
+
+          <div class="form__field">
+            <label class="form__label" for="name">Your name</label>
+            <input
+              class="form__input"
+              type="text"
+              id="name"
+              name="name"
+              placeholder="How should we address you?"
+              required
+              autocomplete="name"
+            />
+          </div>
+
+          <div class="form__field">
+            <label class="form__label" for="vision">Your vision</label>
+            <textarea
+              class="form__textarea"
+              id="vision"
+              name="vision"
+              placeholder="Tell us about your home — what it is now, and what you feel it's trying to become. There are no wrong answers here."
+              required
+            ></textarea>
+          </div>
+
+          <div class="form__field">
+            <label class="form__label" for="phone">Phone (optional)</label>
+            <input
+              class="form__input"
+              type="tel"
+              id="phone"
+              name="phone"
+              placeholder="If you'd prefer a call"
+              autocomplete="tel"
+            />
+          </div>
+
+          <div class="form__field">
+            <label class="form__label" for="timeline">When are you thinking of starting?</label>
+            <select class="form__select" id="timeline" name="timeline" required>
+              <option value="" disabled selected>Your sense of timing</option>
+              <option value="soon">Within the next 3 months</option>
+              <option value="mid">3 to 6 months from now</option>
+              <option value="planning">6 months to a year — still planning</option>
+              <option value="exploring">Just beginning to explore</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn-cta">
+            Start the Conversation
+            <span class="btn-cta__arrow" aria-hidden="true"></span>
+          </button>
+
+          <p class="contact__reassurance">
+            We read every message personally. We'll be in touch within 24 hours.
+          </p>
+        </form>
+      </div>
+
+      <!-- Handwritten closing -->
+      <div class="contact__closing">
+        <p class="contact__closing-quote">
+          "A RINOVO home is the most personal investment you will ever make — and one of the most enduring."
+        </p>
+        <span class="contact__signature">— The RINOVO Team</span>
+      </div>
+
+    </div>
+  </section>
+
+</Layout>
+
+<script>
+  // Boot the RINOVO experience
+  import '../scripts/main.js';
+</script>

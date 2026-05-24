@@ -1,0 +1,1288 @@
+/* ============================================================
+   RINOVO GLOBAL DESIGN SYSTEM
+   Version 1.0 — The weaverbird's palette
+   ============================================================ */
+
+/* --- Google Fonts Import --- */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&family=Caveat:wght@400;500&display=swap');
+
+/* ============================================================
+   CSS CUSTOM PROPERTIES — THE FULL RINOVO SYSTEM
+   ============================================================ */
+:root {
+  /* --- Brand Colors (extracted from RINOVO logo) --- */
+  --rinovo-charcoal:   #1A1814;   /* Wing black — warm charcoal */
+  --rinovo-gold:       #D4933A;   /* Weaverbird body gold — amber, warm, alive */
+  --rinovo-ember:      #C94F1A;   /* Breast terracotta — the emotional accent */
+
+  /* --- Environmental Colors --- */
+  --rinovo-cream:      #F5F0E8;   /* Aged linen / fresh plaster */
+  --rinovo-off-white:  #FAFAF7;   /* Light section background */
+  --rinovo-stone:      #C4BAB0;   /* Limestone — cool, structural */
+  --rinovo-earth:      #8C7355;   /* Oiled walnut — body copy */
+  --rinovo-forest:     #2C4A3E;   /* Northern Virginia forest */
+  --rinovo-shadow:     rgba(26, 24, 20, 0.55);
+
+  /* --- Texture & Paper Colors --- */
+  --rinovo-paper:      #F9F5EF;   /* Misty transition color — warm paper white */
+  --rinovo-graphite:   #4A4540;   /* Pencil lines, sketch elements */
+  --rinovo-ink:        #1A1814;   /* Quill ink */
+  --rinovo-wash-gold:  rgba(212, 147, 58, 0.12);   /* Watercolor gold wash */
+  --rinovo-wash-ember: rgba(201, 79, 26, 0.09);    /* Watercolor ember wash */
+
+  /* --- Typography Families --- */
+  --font-display:      'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body:         'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-hand:         'Caveat', cursive;
+
+  /* --- Type Scale (fluid with clamp) --- */
+  --type-hero:         clamp(3.5rem,  8vw,   9.5rem);
+  --type-section:      clamp(2.2rem,  4vw,   5.5rem);
+  --type-lead:         clamp(1.2rem,  1.8vw, 1.8rem);
+  --type-body:         clamp(1rem,    1.2vw, 1.2rem);
+  --type-caption:      clamp(0.75rem, 0.9vw, 0.95rem);
+  --type-label:        clamp(0.65rem, 0.75vw, 0.8rem);
+
+  /* --- Spacing Scale --- */
+  --space-xs:   clamp(0.5rem,  1vw,  0.75rem);
+  --space-sm:   clamp(0.75rem, 1.5vw, 1rem);
+  --space-md:   clamp(1.5rem,  3vw,  2.5rem);
+  --space-lg:   clamp(3rem,    6vw,  5rem);
+  --space-xl:   clamp(5rem,    10vw, 9rem);
+  --space-2xl:  clamp(8rem,    15vw, 14rem);
+
+  /* --- Animation Timing --- */
+  --ease-arrive:    cubic-bezier(0.25, 0.1, 0.1, 1);
+  --ease-depart:    cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-warm:      cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast:  400ms;
+  --duration-mid:   700ms;
+  --duration-slow:  1100ms;
+
+  /* --- Z-Index Layers --- */
+  --z-canvas:    0;
+  --z-content:   10;
+  --z-nav:       100;
+  --z-cursor:    1000;
+  --z-overlay:   500;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: auto; /* Lenis handles smooth scroll */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--type-body);
+  color: var(--rinovo-charcoal);
+  background-color: var(--rinovo-cream);
+  line-height: 1.65;
+  overflow-x: hidden;
+  cursor: none; /* Custom cursor replaces default on desktop */
+}
+
+/* Restore cursor on touch devices */
+@media (hover: none) {
+  body { cursor: auto; }
+}
+
+img, video {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: none;
+  border: none;
+  background: none;
+}
+
+@media (hover: none) {
+  button { cursor: pointer; }
+}
+
+/* ============================================================
+   FIXED WEBGL CANVAS — always behind everything
+   ============================================================ */
+#rinovo-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--z-canvas);
+  pointer-events: none;
+}
+
+/* ============================================================
+   CONTENT WRAPPER — scrolls above the canvas
+   ============================================================ */
+#content {
+  position: relative;
+  z-index: var(--z-content);
+}
+
+/* ============================================================
+   CUSTOM CURSOR (Desktop only)
+   ============================================================ */
+.cursor-dot {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: var(--rinovo-gold);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: var(--z-cursor);
+  transform: translate(-50%, -50%);
+  transition: width 300ms var(--ease-arrive),
+              height 300ms var(--ease-arrive),
+              background 300ms ease,
+              opacity 300ms ease;
+  mix-blend-mode: normal;
+}
+
+.cursor-ring {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid var(--rinovo-gold);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: var(--z-cursor);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: width 400ms var(--ease-arrive),
+              height 400ms var(--ease-arrive),
+              opacity 300ms ease,
+              border-color 300ms ease;
+}
+
+.cursor-ring.is-hovering {
+  opacity: 1;
+}
+
+.cursor-ring.is-holding {
+  border-color: var(--rinovo-ember);
+}
+
+.cursor-hold-label {
+  position: fixed;
+  font-family: var(--font-hand);
+  font-size: 0.85rem;
+  color: var(--rinovo-ember);
+  pointer-events: none;
+  z-index: var(--z-cursor);
+  transform: translate(-50%, 30px);
+  opacity: 0;
+  transition: opacity 300ms ease;
+  white-space: nowrap;
+}
+
+.cursor-hold-label.is-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .cursor-dot, .cursor-ring, .cursor-hold-label { display: none; }
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-nav);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  mix-blend-mode: normal;
+}
+
+.nav__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.nav__wordmark {
+  font-family: var(--font-body);
+  font-size: var(--type-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rinovo-cream);
+}
+
+.nav__subtitle {
+  font-family: var(--font-body);
+  font-size: var(--type-label);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: var(--rinovo-stone);
+}
+
+.nav__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.nav__sound-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--rinovo-stone);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
+}
+
+.nav__sound-label {
+  font-family: var(--font-hand);
+  font-size: 0.85rem;
+  color: var(--rinovo-stone);
+  transition: color var(--duration-fast) ease;
+}
+
+.nav__sound-toggle:hover .nav__sound-label {
+  color: var(--rinovo-gold);
+}
+
+/* Sound wave icon */
+.sound-wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 16px;
+}
+
+.sound-wave span {
+  display: block;
+  width: 2px;
+  background: var(--rinovo-gold);
+  border-radius: 2px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+
+.sound-wave span:nth-child(1) { height: 6px;  animation-delay: 0s; }
+.sound-wave span:nth-child(2) { height: 12px; animation-delay: 0.1s; }
+.sound-wave span:nth-child(3) { height: 16px; animation-delay: 0.2s; }
+.sound-wave span:nth-child(4) { height: 10px; animation-delay: 0.3s; }
+.sound-wave span:nth-child(5) { height: 6px;  animation-delay: 0.4s; }
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+  50%       { transform: scaleY(1);   opacity: 1; }
+}
+
+.sound-wave.is-muted span {
+  animation: none;
+  transform: scaleY(0.3);
+  opacity: 0.3;
+}
+
+/* ============================================================
+   RIGHT-SIDE DOT NAVIGATION (Mont-Fort pattern)
+   ============================================================ */
+.dot-nav {
+  position: fixed;
+  right: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--z-nav);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.dot-nav__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rinovo-stone);
+  background: transparent;
+  cursor: none;
+  transition: all var(--duration-fast) var(--ease-arrive);
+  position: relative;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot-nav__dot::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rinovo-stone);
+  background: transparent;
+  transition: all var(--duration-fast) var(--ease-arrive);
+}
+
+.dot-nav__dot.is-active::after {
+  background: var(--rinovo-gold);
+  border-color: var(--rinovo-gold);
+  width: 8px;
+  height: 8px;
+  box-shadow: 0 0 8px rgba(212, 147, 58, 0.4);
+}
+
+@media (hover: none) {
+  .dot-nav { cursor: pointer; }
+  .dot-nav__dot { cursor: pointer; }
+}
+
+/* Mobile: horizontal progress bar instead of dots */
+@media (max-width: 768px) {
+  .dot-nav {
+    display: none;
+  }
+
+  .mobile-progress {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--rinovo-gold);
+    z-index: var(--z-nav);
+    width: 0%;
+    transition: width 100ms linear;
+    opacity: 0.7;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-progress { display: none; }
+}
+
+/* ============================================================
+   SECTION LABEL (top-left cycling — Mont-Fort pattern)
+   ============================================================ */
+.section-label {
+  position: fixed;
+  top: var(--space-md);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-nav);
+  font-family: var(--font-body);
+  font-size: var(--type-label);
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--rinovo-stone);
+  opacity: 0;
+  transition: opacity var(--duration-mid) ease;
+}
+
+.section-label.is-visible {
+  opacity: 1;
+}
+
+/* ============================================================
+   PAPER GRAIN TEXTURE — the ground of everything
+   ============================================================ */
+.section-light {
+  position: relative;
+}
+
+.section-light::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/textures/paper-grain.webp');
+  background-size: 400px 400px;
+  mix-blend-mode: multiply;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/textures/paper-grain-dark.webp');
+  background-size: 400px 400px;
+  mix-blend-mode: overlay;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   MISTY TRANSITION OVERLAY
+   ============================================================ */
+#mist-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, var(--rinovo-paper) 0%, transparent 70%);
+}
+
+/* ============================================================
+   SECTIONS — base structure
+   ============================================================ */
+.section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.section__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg);
+  width: 100%;
+}
+
+/* ============================================================
+   HERO SECTION
+   ============================================================ */
+.section--hero {
+  background-color: var(--rinovo-charcoal);
+  min-height: 100vh;
+}
+
+.section--hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 75% 30%, var(--rinovo-wash-gold) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 70%, rgba(201, 79, 26, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Ink wash behind wordmark */
+.hero__ink-wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(26, 24, 20, 0.85) 0%, rgba(26, 24, 20, 0.4) 50%, transparent 80%);
+  pointer-events: none;
+}
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  padding-top: 20vh;
+}
+
+.hero__wordmark {
+  font-family: var(--font-body);
+  font-size: var(--type-hero);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rinovo-cream);
+  line-height: 1;
+  display: block;
+  overflow: hidden;
+}
+
+.hero__tagline {
+  font-family: var(--font-display);
+  font-size: var(--type-lead);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--rinovo-stone);
+  margin-top: var(--space-md);
+  line-height: 1.4;
+  max-width: 36ch;
+}
+
+.hero__scroll-invite {
+  position: absolute;
+  bottom: var(--space-lg);
+  left: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.hero__scroll-line {
+  width: 1px;
+  height: 60px;
+  background: linear-gradient(to bottom, var(--rinovo-gold), transparent);
+  animation: scroll-line 2s ease-in-out infinite;
+}
+
+@keyframes scroll-line {
+  0%   { transform: scaleY(0); transform-origin: top; opacity: 0; }
+  40%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+  60%  { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
+
+.hero__scroll-text {
+  font-family: var(--font-body);
+  font-size: var(--type-label);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rinovo-stone);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+/* ============================================================
+   OPENING VIDEO CONTAINER
+   ============================================================ */
+#opening-video-container {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: var(--rinovo-charcoal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#opening-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#opening-video-container.is-hidden {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 800ms ease;
+}
+
+/* ============================================================
+   PHILOSOPHY SECTION
+   ============================================================ */
+.section--philosophy {
+  background-color: var(--rinovo-cream);
+}
+
+.philosophy__heading {
+  font-family: var(--font-display);
+  font-size: var(--type-section);
+  font-weight: 400;
+  color: var(--rinovo-charcoal);
+  line-height: 1.15;
+  max-width: 20ch;
+}
+
+.philosophy__heading em {
+  font-style: italic;
+  color: var(--rinovo-earth);
+}
+
+.philosophy__body {
+  font-family: var(--font-body);
+  font-size: var(--type-lead);
+  font-weight: 300;
+  color: var(--rinovo-earth);
+  max-width: 55ch;
+  margin-top: var(--space-md);
+  line-height: 1.7;
+}
+
+/* Hand-drawn underline on key word */
+.philosophy__underline-word {
+  position: relative;
+  display: inline-block;
+}
+
+.philosophy__underline-word svg {
+  position: absolute;
+  bottom: -4px;
+  left: -4px;
+  width: calc(100% + 8px);
+  height: 8px;
+  overflow: visible;
+}
+
+.philosophy__underline-word path {
+  stroke: var(--rinovo-ember);
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  transition: stroke-dashoffset 800ms var(--ease-arrive);
+}
+
+.philosophy__underline-word.is-drawn path {
+  stroke-dashoffset: 0;
+}
+
+/* ============================================================
+   PROCESS SECTION
+   ============================================================ */
+.section--process {
+  background-color: var(--rinovo-off-white);
+}
+
+.process__header {
+  font-family: var(--font-display);
+  font-size: var(--type-section);
+  font-weight: 300;
+  color: var(--rinovo-charcoal);
+  margin-bottom: var(--space-xl);
+}
+
+.process__phases {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xl);
+}
+
+@media (min-width: 900px) {
+  .process__phases {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg);
+  }
+}
+
+.process__phase {
+  position: relative;
+}
+
+.process__phase-number {
+  font-family: var(--font-hand);
+  font-size: var(--type-label);
+  color: var(--rinovo-stone);
+  margin-bottom: var(--space-xs);
+  display: block;
+}
+
+.process__phase-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 2.5vw, 2.8rem);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--rinovo-charcoal);
+  line-height: 1.2;
+  margin-bottom: var(--space-sm);
+}
+
+.process__phase-body {
+  font-family: var(--font-body);
+  font-size: var(--type-body);
+  font-weight: 300;
+  color: var(--rinovo-earth);
+  line-height: 1.65;
+}
+
+/* Margin annotations */
+.process__annotation {
+  position: absolute;
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  color: var(--rinovo-graphite);
+  opacity: 0.6;
+  transform: rotate(-3deg);
+  right: -1rem;
+  top: 2rem;
+  white-space: nowrap;
+}
+
+/* Sketch illustration placeholder */
+.process__sketch {
+  width: 100%;
+  max-width: 200px;
+  height: 140px;
+  border: 1px dashed var(--rinovo-stone);
+  border-radius: 2px;
+  margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rinovo-stone);
+  font-family: var(--font-hand);
+  font-size: var(--type-caption);
+  opacity: 0.5;
+}
+
+/* Phase connector lines */
+.process__connector {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .process__connector {
+    display: block;
+    position: absolute;
+    top: 90px;
+    right: -1rem;
+    width: calc(var(--space-lg) + 1rem);
+    height: 1px;
+  }
+
+  .process__connector svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .process__connector path {
+    stroke: var(--rinovo-graphite);
+    stroke-width: 1;
+    fill: none;
+    opacity: 0.4;
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+  }
+
+  .process__connector.is-drawn path {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 600ms var(--ease-arrive);
+  }
+}
+
+/* ============================================================
+   PORTFOLIO SECTION
+   ============================================================ */
+.section--portfolio {
+  background-color: var(--rinovo-charcoal);
+}
+
+.portfolio__header {
+  position: relative;
+  margin-bottom: var(--space-xl);
+}
+
+.portfolio__title {
+  font-family: var(--font-display);
+  font-size: var(--type-section);
+  font-weight: 300;
+  color: var(--rinovo-cream);
+  position: relative;
+  z-index: 1;
+}
+
+/* Brushstroke behind title */
+.portfolio__brushstroke {
+  position: absolute;
+  top: 50%;
+  left: -2rem;
+  transform: translateY(-50%);
+  width: calc(100% + 4rem);
+  height: 120%;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.portfolio__brushstroke path {
+  stroke: var(--rinovo-ember);
+  stroke-width: 60;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+}
+
+.portfolio__brushstroke.is-drawn path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1200ms var(--ease-arrive);
+}
+
+.portfolio__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-md);
+}
+
+/* Project Card */
+.project-card {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: rgba(255,255,255,0.03);
+  cursor: none;
+}
+
+@media (hover: none) {
+  .project-card { cursor: pointer; }
+}
+
+.project-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 600ms var(--ease-arrive);
+}
+
+.project-card:hover .project-card__image {
+  transform: scale(1.03);
+}
+
+.project-card__info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-md);
+  background: linear-gradient(to top, rgba(26, 24, 20, 0.9) 0%, transparent 100%);
+}
+
+.project-card__name {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--rinovo-cream);
+  display: block;
+}
+
+.project-card__location {
+  font-family: var(--font-hand);
+  font-size: var(--type-caption);
+  color: var(--rinovo-stone);
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.project-card__material {
+  font-family: var(--font-body);
+  font-size: var(--type-caption);
+  font-weight: 300;
+  color: var(--rinovo-stone);
+  display: block;
+  margin-top: 0.5rem;
+  opacity: 0.8;
+}
+
+/* Hold-to-reveal progress ring */
+.project-card__hold-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+
+.project-card__hold-ring circle {
+  stroke: var(--rinovo-ember);
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  transform-origin: center;
+  transform: rotate(-90deg);
+}
+
+.project-card.is-holding .project-card__hold-ring {
+  opacity: 1;
+}
+
+/* Video reveal overlay */
+.project-card__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 600ms var(--ease-arrive);
+  pointer-events: none;
+}
+
+.project-card.is-revealed .project-card__video {
+  opacity: 1;
+}
+
+/* Material annotation swatch */
+.project-card__swatch {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  padding: 4px 8px;
+  border: 1px solid rgba(196, 186, 176, 0.3);
+  font-family: var(--font-hand);
+  font-size: 0.7rem;
+  color: var(--rinovo-stone);
+  background: rgba(26, 24, 20, 0.6);
+}
+
+/* ============================================================
+   CONTACT SECTION
+   ============================================================ */
+.section--contact {
+  background-color: var(--rinovo-cream);
+}
+
+.contact__heading {
+  font-family: var(--font-display);
+  font-size: var(--type-section);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--rinovo-charcoal);
+  line-height: 1.2;
+  max-width: 22ch;
+  margin-bottom: var(--space-lg);
+}
+
+/* Form wrapper with hand-drawn border */
+.contact__form-wrapper {
+  position: relative;
+  max-width: 680px;
+}
+
+.contact__form-frame {
+  position: absolute;
+  inset: -var(--space-md);
+  pointer-events: none;
+}
+
+.contact__form-frame svg {
+  width: 100%;
+  height: 100%;
+}
+
+.contact__form-frame path {
+  stroke: var(--rinovo-graphite);
+  stroke-width: 1;
+  fill: none;
+  opacity: 0.25;
+  stroke-linecap: round;
+  stroke-dasharray: 3000;
+  stroke-dashoffset: 3000;
+}
+
+.contact__form-frame.is-drawn path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1500ms var(--ease-arrive);
+}
+
+.contact__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form__label {
+  font-family: var(--font-body);
+  font-size: var(--type-label);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rinovo-graphite);
+}
+
+.form__input,
+.form__textarea,
+.form__select {
+  font-family: var(--font-body);
+  font-size: var(--type-body);
+  font-weight: 300;
+  color: var(--rinovo-charcoal);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--rinovo-stone);
+  padding: 0.75rem 0;
+  outline: none;
+  width: 100%;
+  transition: border-color var(--duration-fast) ease;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+
+.form__input:focus,
+.form__textarea:focus,
+.form__select:focus {
+  border-bottom-color: var(--rinovo-gold);
+}
+
+.form__input::placeholder,
+.form__textarea::placeholder {
+  color: var(--rinovo-stone);
+  font-style: italic;
+}
+
+.form__textarea {
+  resize: none;
+  min-height: 140px;
+  line-height: 1.7;
+}
+
+/* CTA Button */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: transparent;
+  border: 1.5px solid var(--rinovo-charcoal);
+  font-family: var(--font-body);
+  font-size: var(--type-body);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rinovo-charcoal);
+  cursor: none;
+  position: relative;
+  overflow: hidden;
+  transition: color var(--duration-fast) ease,
+              border-color var(--duration-fast) ease;
+  min-height: 44px;
+}
+
+@media (hover: none) {
+  .btn-cta { cursor: pointer; }
+}
+
+.btn-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--rinovo-ember);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-mid) var(--ease-arrive);
+  z-index: -1;
+}
+
+.btn-cta:hover::before {
+  transform: scaleX(1);
+}
+
+.btn-cta:hover {
+  color: var(--rinovo-cream);
+  border-color: var(--rinovo-ember);
+}
+
+.btn-cta__arrow {
+  width: 20px;
+  height: 1px;
+  background: currentColor;
+  position: relative;
+  transition: width var(--duration-fast) ease;
+}
+
+.btn-cta__arrow::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid currentColor;
+  border-top: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.btn-cta:hover .btn-cta__arrow {
+  width: 28px;
+}
+
+/* Reassurance text */
+.contact__reassurance {
+  font-family: var(--font-body);
+  font-size: var(--type-caption);
+  font-weight: 300;
+  color: var(--rinovo-earth);
+  margin-top: var(--space-sm);
+  font-style: italic;
+}
+
+/* Handwritten closing */
+.contact__closing {
+  margin-top: var(--space-xl);
+  border-top: 1px solid rgba(139, 115, 85, 0.2);
+  padding-top: var(--space-md);
+}
+
+.contact__closing-quote {
+  font-family: var(--font-display);
+  font-size: var(--type-lead);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--rinovo-earth);
+  line-height: 1.5;
+  max-width: 50ch;
+  margin-bottom: var(--space-sm);
+}
+
+.contact__signature {
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  color: var(--rinovo-graphite);
+  display: block;
+}
+
+/* ============================================================
+   PENCIL DIVIDER — hand-drawn section separator
+   ============================================================ */
+.pencil-divider {
+  width: 100%;
+  height: 12px;
+  overflow: visible;
+  display: block;
+}
+
+.pencil-divider path {
+  stroke: var(--rinovo-graphite);
+  stroke-width: 1;
+  fill: none;
+  opacity: 0.3;
+  stroke-linecap: round;
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 2000;
+}
+
+.pencil-divider.is-drawn path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 900ms var(--ease-arrive);
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.overflow-hidden { overflow: hidden; }
+.clip-text { overflow: hidden; display: block; }
+
+/* Text reveal clip */
+.word-clip {
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+/* ============================================================
+   SCROLL-TRIGGERED REVEAL BASE STATES
+   (GSAP will override these with its own transforms)
+   ============================================================ */
+.reveal-word {
+  opacity: 0;
+  transform: translateY(110%) rotateX(-12deg);
+  display: inline-block;
+}
+
+.reveal-fade {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+/* ============================================================
+   LOADING STATE
+   ============================================================ */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--rinovo-charcoal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.loading-screen.is-complete {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 800ms var(--ease-arrive);
+}
+
+.loading__wordmark {
+  font-family: var(--font-body);
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rinovo-gold);
+}
+
+.loading__bar {
+  width: 120px;
+  height: 1px;
+  background: rgba(212, 147, 58, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.loading__bar::after {
+  content: '';
+  position: absolute;
+  left: -100%;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--rinovo-gold);
+  animation: loading-bar 1.5s var(--ease-arrive) forwards;
+}
+
+@keyframes loading-bar {
+  to { left: 0; }
+}
+
+/* ============================================================
+   RESPONSIVE HELPERS
+   ============================================================ */
+@media (max-width: 768px) {
+  .section__inner {
+    padding: var(--space-xl) var(--space-md);
+  }
+
+  .nav {
+    padding: var(--space-sm) var(--space-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

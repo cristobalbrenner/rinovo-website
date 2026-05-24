@@ -1,0 +1,17 @@
+{
+  "name": "rinovo-website",
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "astro dev --host",
+    "build": "astro build",
+    "preview": "astro preview --host"
+  },
+  "dependencies": {
+    "astro": "^4.15.0",
+    "gsap": "^3.12.5",
+    "howler": "^2.2.4",
+    "lenis": "^1.1.13",
+    "three": "^0.168.0"
+  }
+}
