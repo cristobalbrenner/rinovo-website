@@ -255,15 +255,83 @@ function flyBirdTo(bird, targetPos) {
   requestAnimationFrame(step);
 }
 
+// ============================================================
+// BIRD ENTRANCE — called once on page load after video (or immediately)
+// Bird starts off-screen right, sweeps in from flight, lands in hero.
+// ============================================================
+export function birdEntranceAnimation(bird, onComplete) {
+  // Start hidden, far off-screen right
+  bird.visible = false;
+  bird.position.set(8, -0.5, 0);
+  bird.rotation.set(0.1, -0.6, 0.2);
+
+  // Small delay then fly in
+  setTimeout(() => {
+    bird.visible = true;
+    isFlying = true;
+
+    const heroTarget = FOCAL_POINTS.hero.clone();
+    const startPos   = bird.position.clone();
+
+    // Arc: sweeps up from lower-right, crests, descends to hero position
+    const arc = new THREE.Vector3(
+      (startPos.x + heroTarget.x) / 2 - 0.5,
+       Math.max(startPos.y, heroTarget.y) + 2.2,
+       0
+    );
+
+    const duration  = 1600; // ms — cinematic, unhurried
+    const startTime = performance.now();
+
+    function step(now) {
+      const raw = (now - startTime) / duration;
+      const t   = Math.min(raw, 1);
+
+      // Smooth ease: accelerate out, decelerate in
+      const e = t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t;
+      const i = 1 - e;
+
+      // Quadratic Bézier
+      bird.position.x = i*i*startPos.x + 2*i*e*arc.x + e*e*heroTarget.x;
+      bird.position.y = i*i*startPos.y + 2*i*e*arc.y + e*e*heroTarget.y;
+
+      // Wing-bank during flight, level out on landing
+      bird.rotation.z = Math.sin(e * Math.PI) * -0.55;
+      // Y rotation: start facing into flight direction, settle to side profile
+      bird.rotation.y = -0.6 + e * 1.85; // arrives at ~1.25 (side-on)
+      bird.rotation.x = 0.20 + Math.sin(e * Math.PI) * -0.1;
+
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        // Landed — restore idle rotation targets
+        bird.rotation.set(0.20, 1.25, -0.35);
+        isFlying = false;
+        onComplete?.();
+      }
+    }
+    requestAnimationFrame(step);
+  }, 400); // 400ms after mist clears
+}
+
 function beginBirdTransformation(bird) {
   const mist = document.getElementById('mist-overlay');
-  if (!mist) return;
-  mist.style.transition = 'opacity 400ms ease';
-  mist.style.opacity = '1';
-  setTimeout(() => {
-    mist.style.transition = 'opacity 700ms ease';
-    mist.style.opacity = '0';
-  }, 500);
+  if (mist) {
+    // Bloom mist in
+    mist.style.transition = 'opacity 400ms cubic-bezier(0.4,0,0.2,1)';
+    mist.style.opacity = '1';
+    // Clear mist while bird is mid-entrance
+    setTimeout(() => {
+      mist.style.transition = 'opacity 800ms cubic-bezier(0.4,0,0.2,1)';
+      mist.style.opacity = '0';
+    }, 600);
+  }
+
+  // Trigger the entrance flight
+  birdEntranceAnimation(bird, () => {
+    // Bird has landed — signal main.js we're ready for scroll
+    window.dispatchEvent(new CustomEvent('rinovo:bird-landed'));
+  });
 }
 
 // ============================================================

@@ -60,11 +60,11 @@
   --duration-slow:  1100ms;
 
   /* --- Z-Index Layers --- */
-  --z-canvas:    20;   /* Bird canvas floats ABOVE content — canvas is transparent so text shows through */
   --z-content:   10;
+  --z-canvas:    20;    /* Bird canvas — transparent, only geometry shows */
   --z-nav:       100;
+  --z-overlay:   950;   /* Mist: above video (900), below cursor (1000) */
   --z-cursor:    1000;
-  --z-overlay:   500;
 }
 
 /* ============================================================
@@ -444,7 +444,15 @@ button {
   z-index: var(--z-overlay);
   pointer-events: none;
   opacity: 0;
-  background: radial-gradient(ellipse at center, var(--rinovo-paper) 0%, transparent 70%);
+  /* Solid cream center bleeding to warm white — covers video and canvas at peak */
+  background: radial-gradient(
+    ellipse 120% 120% at center,
+    var(--rinovo-paper) 0%,
+    rgba(249, 245, 239, 0.95) 55%,
+    rgba(249, 245, 239, 0.6) 80%,
+    transparent 100%
+  );
+  will-change: opacity;
 }
 
 /* ============================================================

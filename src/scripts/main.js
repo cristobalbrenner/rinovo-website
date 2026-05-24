@@ -12,96 +12,128 @@ import { initSound } from './sound.js';
 // ============================================================
 // BOOT SEQUENCE
 // ============================================================
-async function boot() {
-  // 1. Handle loading screen
-  const loadingScreen = document.getElementById('loading-screen');
+// Guard against initScroll being called more than once
+let scrollInitialised = false;
+function safeInitScroll() {
+  if (scrollInitialised) return;
+  scrollInitialised = true;
+  safeInitScroll();
+}
 
-  // 2. Initialize all systems in parallel
+async function boot() {
+  // Initialize all systems in parallel
   await Promise.all([
-    initScene(),        // Three.js canvas + bird
-    initCursor(),       // Custom cursor
-    initSound(),        // Howler.js audio
+    initScene(),   // Three.js canvas + bird
+    initCursor(),  // Custom cursor
+    initSound(),   // Howler.js audio
   ]);
 
-  // 3. Handle opening video
+  // Handle opening video / bird entrance
   handleOpeningVideo();
 
-  // 4. Initialize portfolio interactions
+  // Portfolio long-press interactions
   initPortfolio();
 }
 
 // ============================================================
 // OPENING VIDEO SEQUENCE
+// ─────────────────────────────────────────────────────────────
+// Two paths, same ending:
+//
+// PATH A — Real video present:
+//   video plays → bird flies off-screen → mist blooms
+//   → video fades → 3D bird materialises from mist → lands
+//
+// PATH B — No video file yet (development / missing asset):
+//   mist blooms immediately → 3D bird flies in from right → lands
+//
+// Both paths end with: bird landed, scroll unlocked, tagline visible.
 // ============================================================
 function handleOpeningVideo() {
   const container = document.getElementById('opening-video-container');
-  const video = document.getElementById('opening-video');
-  const loadingScreen = document.getElementById('loading-screen');
+  const video     = document.getElementById('opening-video');
 
-  if (!video) {
-    // No video file yet — skip straight to hero
-    dismissLoadingAndVideo();
+  // Check if the video element has a real source to try
+  // Note: src is on <source> children, not on the <video> element itself
+  const firstSource = video?.querySelector('source[src]');
+  const hasSrc = !!firstSource;
+
+  if (!hasSrc) {
+    // PATH B — no video yet, go straight to bird entrance
+    skipToEntrance();
     return;
   }
 
-  // Dismiss loading screen once video can play
-  video.addEventListener('canplay', () => {
-    loadingScreen?.classList.add('is-complete');
-    setTimeout(() => loadingScreen?.remove(), 900);
-  }, { once: true });
+  // PATH A — video present
+  let transformTriggered = false;
 
-  // Fallback: if video never loads, dismiss everything after 2s
-  const fallbackTimer = setTimeout(() => {
-    dismissLoadingAndVideo();
-  }, 2000);
-
-  // When video ends (or after 12s max), trigger transformation
   const triggerTransformation = () => {
-    clearTimeout(fallbackTimer);
+    if (transformTriggered) return;
+    transformTriggered = true;
+
+    // Fade video container out
     container?.classList.add('is-hidden');
 
-    // Start bird transformation (morph from organic to origami)
+    // Tell the 3D bird to begin its mist-entrance sequence
     window._rinovo?.bird?.beginTransformation?.();
 
-    // Begin scroll-driven experience
-    setTimeout(() => {
-      initScroll();
+    // Wait for bird to land, then enable scroll
+    window.addEventListener('rinovo:bird-landed', () => {
+      safeInitScroll();
       container?.remove();
-    }, 1800); // Wait for mist transition to complete
+    }, { once: true });
+
+    // Safety: unlock scroll after 3s even if event doesn't fire
+    setTimeout(() => safeInitScroll(), 3000);
   };
 
-  video.addEventListener('ended', triggerTransformation, { once: true });
+  // Fallback: if video stalls for 2.5s on load, skip it
+  const stallTimer = setTimeout(() => skipToEntrance(), 2500);
 
-  // Safety timeout: 13 seconds max
-  setTimeout(triggerTransformation, 13000);
-
-  // If video src is missing / load fails, skip gracefully
-  video.addEventListener('error', () => {
-    clearTimeout(fallbackTimer);
-    dismissLoadingAndVideo();
+  video.addEventListener('canplay', () => {
+    clearTimeout(stallTimer);
   }, { once: true });
 
-  // Also listen for error on source elements (Chrome/Safari difference)
+  // Primary trigger: video ends naturally
+  video.addEventListener('ended', triggerTransformation, { once: true });
+
+  // Safety cap: 13s maximum regardless
+  setTimeout(triggerTransformation, 13000);
+
+  // Error paths — treat same as no video
+  // Guard: only fire once across all error sources
+  let errorHandled = false;
+  const handleVideoError = () => {
+    if (errorHandled) return;
+    errorHandled = true;
+    clearTimeout(stallTimer);
+    skipToEntrance();
+  };
+
+  video.addEventListener('error', handleVideoError, { once: true });
   video.querySelectorAll('source').forEach(source => {
-    source.addEventListener('error', () => {
-      clearTimeout(fallbackTimer);
-      dismissLoadingAndVideo();
-    }, { once: true });
+    source.addEventListener('error', handleVideoError, { once: true });
   });
 }
 
-function dismissLoadingAndVideo() {
+// PATH B — skip video, go directly to bird entrance with mist
+function skipToEntrance() {
+  const container     = document.getElementById('opening-video-container');
   const loadingScreen = document.getElementById('loading-screen');
-  const container = document.getElementById('opening-video-container');
 
+  // Hide loading and video container
   loadingScreen?.classList.add('is-complete');
-  setTimeout(() => loadingScreen?.remove(), 900);
+  setTimeout(() => loadingScreen?.remove(), 600);
 
   container?.classList.add('is-hidden');
-  setTimeout(() => {
-    container?.remove();
-    initScroll();
-  }, 600);
+  setTimeout(() => container?.remove(), 700);
+
+  // Trigger the mist + bird flight entrance
+  window._rinovo?.bird?.beginTransformation?.();
+
+  // Enable scroll once bird lands (or after 3s max)
+  window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
+  setTimeout(() => safeInitScroll(), 3000);
 }
 
 // ============================================================
