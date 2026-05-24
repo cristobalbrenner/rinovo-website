@@ -1,13 +1,13 @@
 /**
  * RINOVO — Ambient Sound System
- * One continuous soundtrack loops across the whole site.
- * Always muted on load. User opts in. State persists in sessionStorage.
+ * Plays on first user interaction (browser requires this — true autoplay is blocked).
+ * Toggle in nav lets user mute/unmute. State persists in sessionStorage.
  */
 
 let Howl;
-let isMuted = true;
 let sound = null;
-let isLoaded = false;
+let isMuted = false; // default: sound ON (plays on first interaction)
+let hasInteracted = false;
 
 export async function initSound() {
   const toggle = document.getElementById('sound-toggle');
@@ -16,43 +16,52 @@ export async function initSound() {
 
   if (!toggle) return;
 
-  // Restore last session preference
-  isMuted = sessionStorage.getItem('rinovo-sound') !== 'on';
+  // Restore explicit mute preference — only mute if user previously turned it off
+  if (sessionStorage.getItem('rinovo-sound') === 'off') {
+    isMuted = true;
+  }
+
   updateSoundUI(isMuted, wave, label);
   toggle.setAttribute('aria-pressed', String(!isMuted));
 
-  toggle.addEventListener('click', async () => {
+  // Play on first interaction (browsers block autoplay before user gesture)
+  const unlockAudio = () => {
+    if (hasInteracted) return;
+    hasInteracted = true;
+    if (!isMuted) loadAndPlay();
+  };
+
+  document.addEventListener('click',      unlockAudio, { once: true });
+  document.addEventListener('touchstart', unlockAudio, { once: true });
+  document.addEventListener('scroll',     unlockAudio, { once: true, passive: true });
+  document.addEventListener('keydown',    unlockAudio, { once: true });
+
+  // Toggle button
+  toggle.addEventListener('click', async (e) => {
+    e.stopPropagation(); // don't double-trigger unlock
     isMuted = !isMuted;
     sessionStorage.setItem('rinovo-sound', isMuted ? 'off' : 'on');
     toggle.setAttribute('aria-pressed', String(!isMuted));
     updateSoundUI(isMuted, wave, label);
 
     if (!isMuted) {
+      hasInteracted = true;
       await loadAndPlay();
     } else {
       fadeOut();
     }
   });
-
-  // If user had sound on last session, auto-play on first interaction
-  if (!isMuted) {
-    const unlock = async () => {
-      await loadAndPlay();
-      document.removeEventListener('click', unlock);
-      document.removeEventListener('touchstart', unlock);
-    };
-    document.addEventListener('click', unlock, { once: true });
-    document.addEventListener('touchstart', unlock, { once: true });
-  }
 }
 
 async function loadAndPlay() {
+  if (isMuted) return;
+
   if (!Howl) {
     try {
       const howler = await import('howler');
       Howl = howler.Howl;
     } catch {
-      return; // Howler failed to load — silent
+      return;
     }
   }
 
@@ -61,18 +70,13 @@ async function loadAndPlay() {
       src: ['/audio/rinovo-ambient.mp3'],
       loop: true,
       volume: 0,
-      html5: true, // streams on mobile instead of buffering fully
-      onloaderror: () => { sound = null; }, // reset if file missing
+      html5: true,
+      onloaderror: () => { sound = null; },
     });
   }
 
-  if (!sound.playing()) {
-    sound.play();
-  }
-
-  // Fade in to a warm, unobtrusive level
-  sound.fade(sound.volume(), 0.35, 2000);
-  isLoaded = true;
+  if (!sound.playing()) sound.play();
+  sound.fade(sound.volume(), 0.38, 2500);
 }
 
 function fadeOut() {

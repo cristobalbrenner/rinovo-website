@@ -130,81 +130,23 @@ function setupTextReveals() {
     });
   });
 
-  // Philosophy heading words
+  // Philosophy heading words — scroll-triggered word reveal
   const philWords = document.querySelectorAll('.philosophy__heading .reveal-word');
-  philWords.forEach((word, i) => {
-    gsap.from(word, {
+  if (philWords.length) {
+    gsap.from(philWords, {
       opacity: 0,
       yPercent: 110,
       rotationX: -12,
-      duration: 0.9,
-      ease: 'power3.out',
-      stagger: 0.07,
-      scrollTrigger: {
-        trigger: '#philosophy',
-        start: 'top 75%',
-      },
-    });
-  });
-
-  // Philosophy body
-  document.querySelectorAll('.philosophy__body').forEach((el, i) => {
-    gsap.from(el, {
-      opacity: 0,
-      y: 28,
-      duration: 0.9,
-      ease: 'power2.out',
-      scrollTrigger: {
-        trigger: el,
-        start: 'top 85%',
-      },
-      delay: i * 0.15,
-    });
-  });
-
-  // Portfolio title
-  const portfolioTitle = document.querySelector('.portfolio__title');
-  if (portfolioTitle) {
-    gsap.from(portfolioTitle, {
-      opacity: 0,
-      y: 32,
-      duration: 1,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: '#portfolio',
-        start: 'top 70%',
-      },
-    });
-  }
-
-  // Contact heading
-  const contactHeading = document.querySelector('.contact__heading');
-  if (contactHeading) {
-    gsap.from(contactHeading, {
-      opacity: 0,
-      y: 28,
-      duration: 1,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: '#contact',
-        start: 'top 75%',
-      },
-    });
-  }
-
-  // All .reveal-fade elements
-  document.querySelectorAll('.reveal-fade').forEach(el => {
-    gsap.from(el, {
-      opacity: 0,
-      y: 28,
       duration: 0.85,
-      ease: 'power2.out',
-      scrollTrigger: {
-        trigger: el,
-        start: 'top 88%',
-      },
+      ease: 'power3.out',
+      stagger: 0.08,
+      immediateRender: false,
+      scrollTrigger: { trigger: '#philosophy', start: 'top 78%' },
     });
-  });
+  }
+
+  // NOTE: .reveal-fade elements are handled by IntersectionObserver
+  // in main.js with CSS transitions — no GSAP here to avoid conflicts.
 }
 
 // ============================================================

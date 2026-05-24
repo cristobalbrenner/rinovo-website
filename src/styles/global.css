@@ -1199,18 +1199,22 @@ button {
 }
 
 /* ============================================================
-   SCROLL-TRIGGERED REVEAL BASE STATES
-   GSAP sets opacity/transform programmatically on scroll.
-   No CSS opacity:0 here — that hides text if JS is slow or fails.
-   GSAP's gsap.from() handles the initial hidden state itself.
+   SCROLL-TRIGGERED REVEAL STATES
+   CSS transitions + IntersectionObserver (no GSAP conflict).
+   Elements start hidden via :not(.is-visible), animate in when
+   IntersectionObserver adds the .is-visible class.
    ============================================================ */
 .reveal-word {
   display: inline-block;
-  will-change: transform, opacity;
 }
 
 .reveal-fade {
-  will-change: transform, opacity;
+  transition: opacity 0.75s ease, transform 0.75s ease;
+}
+
+.reveal-fade:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(28px);
 }
 
 /* ============================================================
