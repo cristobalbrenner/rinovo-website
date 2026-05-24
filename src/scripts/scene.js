@@ -140,10 +140,10 @@ function createOrigamiBird() {
     0.00, -0.10, 0.14,   0.55,  0.20, 0.02,   0.20, -0.55, 0.02,
   ]);
 
-  // Place in hero — upper right of viewport
+  // Place in hero — upper right, small and elegant (placeholder until GLB loads)
   group.position.set(2.8, 1.2, 0);
   group.rotation.set(0.1, -0.15, 0.08);
-  group.scale.setScalar(1.15);
+  group.scale.setScalar(0.42);  // Much smaller — logo-proportioned
 
   return group;
 }

@@ -1,106 +1,87 @@
 /**
- * RINOVO — Ambient Sound System (Howler.js)
- * Always muted on load. Sound is architecture, not background.
+ * RINOVO — Ambient Sound System
+ * One continuous soundtrack loops across the whole site.
+ * Always muted on load. User opts in. State persists in sessionStorage.
  */
 
-// Howler is loaded lazily to avoid blocking initial render
 let Howl;
 let isMuted = true;
-let currentSection = 'hero';
-
-const AUDIO_LAYERS = {
-  hero:       { src: ['/audio/hero-ambient.mp3'],       volume: 0.4 },
-  philosophy: { src: ['/audio/philosophy-ambient.mp3'], volume: 0.35 },
-  process:    { src: ['/audio/process-ambient.mp3'],    volume: 0.3 },
-  portfolio:  { src: ['/audio/portfolio-ambient.mp3'],  volume: 0.35 },
-  contact:    { src: ['/audio/contact-ambient.mp3'],    volume: 0.25 },
-};
-
-let sounds = {};
-let activeSound = null;
+let sound = null;
+let isLoaded = false;
 
 export async function initSound() {
   const toggle = document.getElementById('sound-toggle');
-  const wave = document.getElementById('sound-wave');
-  const label = document.getElementById('sound-label');
+  const wave   = document.getElementById('sound-wave');
+  const label  = document.getElementById('sound-label');
 
   if (!toggle) return;
 
-  // Restore session state
+  // Restore last session preference
   isMuted = sessionStorage.getItem('rinovo-sound') !== 'on';
-
   updateSoundUI(isMuted, wave, label);
-  toggle.setAttribute('aria-pressed', !isMuted);
+  toggle.setAttribute('aria-pressed', String(!isMuted));
 
   toggle.addEventListener('click', async () => {
     isMuted = !isMuted;
     sessionStorage.setItem('rinovo-sound', isMuted ? 'off' : 'on');
-    toggle.setAttribute('aria-pressed', !isMuted);
+    toggle.setAttribute('aria-pressed', String(!isMuted));
     updateSoundUI(isMuted, wave, label);
 
     if (!isMuted) {
-      // First unmute — load Howler lazily
-      if (!Howl) {
-        try {
-          const howler = await import('howler');
-          Howl = howler.Howl;
-          preloadSounds();
-        } catch (e) {
-          // Howler not available — silent failure
-          return;
-        }
-      }
-      playSection(currentSection);
+      await loadAndPlay();
     } else {
-      fadeOutAll();
+      fadeOut();
     }
   });
 
-  // Listen for section changes
-  document.addEventListener('rinovo:section-change', (e) => {
-    currentSection = e.detail.sectionId;
-    if (!isMuted) playSection(currentSection);
-  });
+  // If user had sound on last session, auto-play on first interaction
+  if (!isMuted) {
+    const unlock = async () => {
+      await loadAndPlay();
+      document.removeEventListener('click', unlock);
+      document.removeEventListener('touchstart', unlock);
+    };
+    document.addEventListener('click', unlock, { once: true });
+    document.addEventListener('touchstart', unlock, { once: true });
+  }
+}
+
+async function loadAndPlay() {
+  if (!Howl) {
+    try {
+      const howler = await import('howler');
+      Howl = howler.Howl;
+    } catch {
+      return; // Howler failed to load — silent
+    }
+  }
+
+  if (!sound) {
+    sound = new Howl({
+      src: ['/audio/rinovo-ambient.mp3'],
+      loop: true,
+      volume: 0,
+      html5: true, // streams on mobile instead of buffering fully
+      onloaderror: () => { sound = null; }, // reset if file missing
+    });
+  }
+
+  if (!sound.playing()) {
+    sound.play();
+  }
+
+  // Fade in to a warm, unobtrusive level
+  sound.fade(sound.volume(), 0.35, 2000);
+  isLoaded = true;
+}
+
+function fadeOut() {
+  if (!sound || !sound.playing()) return;
+  sound.fade(sound.volume(), 0, 2000);
+  setTimeout(() => sound.stop(), 2100);
 }
 
 function updateSoundUI(muted, wave, label) {
-  if (wave) wave.classList.toggle('is-muted', muted);
+  if (wave)  wave.classList.toggle('is-muted', muted);
   if (label) label.textContent = muted ? '♪ on' : '♪ off';
-}
-
-function preloadSounds() {
-  if (!Howl) return;
-  Object.entries(AUDIO_LAYERS).forEach(([key, config]) => {
-    sounds[key] = new Howl({
-      src: config.src,
-      loop: true,
-      volume: 0,
-      preload: true,
-    });
-  });
-}
-
-function playSection(sectionId) {
-  if (!Howl || isMuted) return;
-  const config = AUDIO_LAYERS[sectionId];
-  const sound = sounds[sectionId];
-  if (!sound || !config) return;
-
-  // Fade out current
-  fadeOutAll();
-
-  // Fade in new
-  sound.play();
-  sound.fade(0, config.volume, 2000);
-  activeSound = sound;
-}
-
-function fadeOutAll() {
-  Object.values(sounds).forEach(sound => {
-    if (sound.playing()) {
-      sound.fade(sound.volume(), 0, 2000);
-      setTimeout(() => sound.stop(), 2100);
-    }
-  });
-  activeSound = null;
 }
