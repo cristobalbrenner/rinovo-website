@@ -92,24 +92,27 @@ function loadBird() {
       (gltf) => {
         const model = gltf.scene;
 
-        // Auto-scale to fit nicely in scene
+        // Auto-scale — half the previous size (targetSize 0.9 instead of 1.8)
         const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const targetSize = 1.8; // how tall/wide the bird should be in scene units
-        const scale = targetSize / maxDim;
+        const maxDim = Math.max(...box.getSize(new THREE.Vector3()).toArray());
+        const scale = 0.9 / maxDim;
         model.scale.setScalar(scale);
 
-        // Center the model at origin first
+        // Center at origin before repositioning
         const center = box.getCenter(new THREE.Vector3());
         model.position.sub(center.multiplyScalar(scale));
 
-        // Apply RINOVO brand materials based on mesh position/name
-        applyBrandMaterials(model);
+        // Keep Meshy's original textures/materials — they already have the logo colors.
+        // Just ensure meshes respond well to our warm lighting.
+        enhanceMeshLighting(model);
 
-        // Position in hero — upper right
-        model.position.set(2.8, 1.2, 0);
-        model.rotation.set(0.05, -0.1, 0.05);
+        // Position: upper-right of hero, rotated to show side profile + wings
+        model.position.set(2.6, 1.1, 0);
+        model.rotation.set(
+          0.15,   // X: slight nose-down tilt
+          0.72,   // Y: ~41° turn — shows left wing prominently, three-quarter view
+         -0.18    // Z: gentle banking roll, like a bird mid-turn
+        );
 
         console.log('✓ Weaverbird GLB loaded');
         resolve(model);
@@ -133,59 +136,28 @@ function loadBird() {
 }
 
 // ============================================================
-// APPLY BRAND MATERIALS TO GLB
-// Overrides Meshy.ai's exported materials with RINOVO colors.
-// Tries to detect which part is wing/body/breast by mesh name or position.
+// ENHANCE MESH LIGHTING
+// Keeps Meshy's original textures/colors intact.
+// Just tunes roughness/metalness so the model responds well
+// to our warm RINOVO lighting rig.
 // ============================================================
-function applyBrandMaterials(model) {
-  const matWing = new THREE.MeshStandardMaterial({
-    color: 0x1A1814, roughness: 0.55, metalness: 0.08, flatShading: true,
-  });
-  const matBody = new THREE.MeshStandardMaterial({
-    color: 0xD4933A, roughness: 0.42, metalness: 0.2, flatShading: true,
-    emissive: 0xD4933A, emissiveIntensity: 0.06,
-  });
-  const matBreast = new THREE.MeshStandardMaterial({
-    color: 0xC94F1A, roughness: 0.42, metalness: 0.1, flatShading: true,
-    emissive: 0xC94F1A, emissiveIntensity: 0.18,
-  });
-
+function enhanceMeshLighting(model) {
   model.traverse((child) => {
     if (!child.isMesh) return;
-
-    const name = (child.name || '').toLowerCase();
-
-    // Try to match by mesh name (Meshy often names parts)
-    if (name.includes('breast') || name.includes('orange') || name.includes('ember') || name.includes('red')) {
-      child.material = matBreast;
-    } else if (name.includes('wing') || name.includes('tail') || name.includes('head') || name.includes('black') || name.includes('dark')) {
-      child.material = matWing;
-    } else if (name.includes('body') || name.includes('gold') || name.includes('yellow') || name.includes('chest')) {
-      child.material = matBody;
-    } else {
-      // No name match — detect by the mesh's existing color if available
-      const existingColor = child.material?.color;
-      if (existingColor) {
-        const hsl = {};
-        existingColor.getHSL(hsl);
-
-        if (hsl.l < 0.15) {
-          // Very dark — wing/tail/head
-          child.material = matWing;
-        } else if (hsl.h > 0.03 && hsl.h < 0.12) {
-          // Orange-red range — breast
-          child.material = matBreast;
-        } else {
-          // Default — gold body
-          child.material = matBody;
-        }
-      } else {
-        child.material = matBody;
-      }
-    }
-
     child.castShadow = false;
     child.receiveShadow = false;
+
+    // Clone material so we don't mutate the shared original
+    if (child.material) {
+      child.material = child.material.clone();
+      // Make it respond to lighting without washing out the texture color
+      if (child.material.roughness !== undefined) child.material.roughness = 0.55;
+      if (child.material.metalness !== undefined) child.material.metalness = 0.12;
+      // Small emissive so it stays visible in dark sections
+      if (child.material.emissive) {
+        child.material.emissiveIntensity = 0.04;
+      }
+    }
   });
 }
 
