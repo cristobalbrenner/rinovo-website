@@ -30,7 +30,7 @@ export async function initScene() {
   renderer.setClearColor(0x000000, 0); // transparent — sections show through
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.4;
+  renderer.toneMappingExposure = 0.95; // was 1.4 — was washing out texture colors
 
   scene = new THREE.Scene();
 
@@ -63,17 +63,21 @@ export async function initScene() {
 // LIGHTING
 // ============================================================
 function setupLighting() {
-  scene.add(new THREE.AmbientLight(0xfff8f0, 0.9));
+  // Ambient: soft neutral-warm fill — low enough that textures read clearly
+  scene.add(new THREE.AmbientLight(0xfff5e8, 0.5));
 
-  const key = new THREE.DirectionalLight(0xffe4b0, 2.4);
+  // Key: warm afternoon light from upper-right — toned down so texture shows
+  const key = new THREE.DirectionalLight(0xfff0d8, 1.1);
   key.position.set(6, 8, 6);
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0xC94F1A, 0.8);
+  // Rim: ember accent from behind-left — defines the breast and tail edge
+  const rim = new THREE.DirectionalLight(0xC94F1A, 0.55);
   rim.position.set(-8, 2, -4);
   scene.add(rim);
 
-  const fill = new THREE.DirectionalLight(0xffd0a0, 0.5);
+  // Fill: gentle warm bounce from below-left — lifts shadow areas softly
+  const fill = new THREE.DirectionalLight(0xffe8c8, 0.35);
   fill.position.set(-4, 4, 8);
   scene.add(fill);
 }
@@ -106,12 +110,12 @@ function loadBird() {
         // Just ensure meshes respond well to our warm lighting.
         enhanceMeshLighting(model);
 
-        // Position: upper-right of hero, rotated to show side profile + wings
+        // Position: upper-right of hero, in a banking turn showing full wing span
         model.position.set(2.6, 1.1, 0);
         model.rotation.set(
-          0.15,   // X: slight nose-down tilt
-          0.72,   // Y: ~41° turn — shows left wing prominently, three-quarter view
-         -0.18    // Z: gentle banking roll, like a bird mid-turn
+          0.20,   // X: nose pitched slightly down — in-flight attitude
+          1.25,   // Y: ~72° — almost fully sideways, wing silhouette clearly visible
+         -0.35    // Z: banking roll — wing tilts toward viewer, dynamic flight pose
         );
 
         console.log('✓ Weaverbird GLB loaded');
@@ -150,13 +154,10 @@ function enhanceMeshLighting(model) {
     // Clone material so we don't mutate the shared original
     if (child.material) {
       child.material = child.material.clone();
-      // Make it respond to lighting without washing out the texture color
-      if (child.material.roughness !== undefined) child.material.roughness = 0.55;
-      if (child.material.metalness !== undefined) child.material.metalness = 0.12;
-      // Small emissive so it stays visible in dark sections
-      if (child.material.emissive) {
-        child.material.emissiveIntensity = 0.04;
-      }
+      // Let texture colors read clearly — minimal roughness/metalness change
+      if (child.material.roughness !== undefined) child.material.roughness = 0.62;
+      if (child.material.metalness !== undefined) child.material.metalness = 0.08;
+      // No emissive boost — ambient + fill lights handle dark-section visibility
     }
   });
 }

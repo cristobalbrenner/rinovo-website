@@ -5,7 +5,11 @@ import Layout from '../layouts/Layout.astro';
 <Layout>
 
   <!-- ================================================
-       OPENING VIDEO — real weaverbird
+       OPENING VIDEO — real weaverbird weaving its nest,
+       then launching into flight and transforming into
+       the origami version. Drop your video file here:
+       public/video/weaverbird-opening.mp4 (max 8MB)
+       Source: Pond5, Artgrid, or Pexels (search "weaverbird nest")
        ================================================ -->
   <div id="opening-video-container" aria-hidden="true">
     <video
@@ -15,7 +19,6 @@ import Layout from '../layouts/Layout.astro';
       playsinline
       preload="auto"
     >
-      <!-- Replace with licensed weaverbird footage from Pond5 / Artgrid -->
       <source src="/video/weaverbird-opening.webm" type="video/webm" />
       <source src="/video/weaverbird-opening.mp4" type="video/mp4" />
     </video>
@@ -23,26 +26,23 @@ import Layout from '../layouts/Layout.astro';
 
   <!-- ================================================
        CHAPTER 1 — THE ARRIVAL (Hero)
+       The bird IS the hero. No wordmark needed here —
+       it lives in the nav. The tagline arrives quietly
+       after the transformation.
        ================================================ -->
   <section class="section section--hero section-dark" id="hero" data-section="hero" data-section-label="Your Vision">
     <div class="hero__ink-wash" aria-hidden="true"></div>
-    <div class="section__inner hero__content">
 
-      <h1 class="hero__wordmark" aria-label="RINOVO">
-        <span class="clip-text">
-          <span class="reveal-word">RINOVO</span>
-        </span>
-      </h1>
-
+    <!-- Tagline — arrives after the bird settles, bottom-left -->
+    <div class="hero__tagline-wrap">
       <p class="hero__tagline">
         <span class="clip-text"><span class="reveal-word">Your home already has a story.</span></span>
         <br />
         <span class="clip-text"><span class="reveal-word">We help it unfold.</span></span>
       </p>
-
     </div>
 
-    <!-- Animated scroll invitation -->
+    <!-- Scroll invitation -->
     <div class="hero__scroll-invite" aria-hidden="true">
       <div class="hero__scroll-line"></div>
       <span class="hero__scroll-text">Scroll to discover</span>

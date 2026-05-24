@@ -485,42 +485,38 @@ button {
   pointer-events: none;
 }
 
-/* Ink wash behind wordmark */
+/* Subtle vignette — edges darken, bird breathes in the center */
 .hero__ink-wash {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 50% 45%, rgba(26, 24, 20, 0.85) 0%, rgba(26, 24, 20, 0.4) 50%, transparent 80%);
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(26, 24, 20, 0.65) 100%);
   pointer-events: none;
 }
 
-.hero__content {
-  position: relative;
+/* Tagline — anchored bottom-left, arrives quietly after bird settles */
+.hero__tagline-wrap {
+  position: absolute;
+  bottom: clamp(5rem, 10vh, 8rem);
+  left: var(--space-lg);
   z-index: 2;
-  padding-top: 20vh;
-}
-
-.hero__wordmark {
-  font-family: var(--font-body);
-  font-size: var(--type-hero);
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--rinovo-cream);
-  line-height: 1;
-  display: block;
-  overflow: hidden;
 }
 
 .hero__tagline {
   font-family: var(--font-display);
-  font-size: var(--type-lead);
+  font-size: clamp(1.1rem, 1.6vw, 1.5rem);
   font-weight: 300;
   font-style: italic;
   color: var(--rinovo-stone);
-  margin-top: var(--space-md);
-  line-height: 1.4;
-  max-width: 36ch;
+  line-height: 1.5;
+  max-width: 32ch;
+  opacity: 0;
+  animation: tagline-arrive 1.2s ease forwards 1.8s; /* waits for bird */
+}
+
+@keyframes tagline-arrive {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .hero__scroll-invite {
