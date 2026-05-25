@@ -51,7 +51,10 @@ function initiateEntrance(mode) {
   if (entranceInitiated) return;
   entranceInitiated = true;
   window._rinovo?.bird?.beginTransformation?.(mode);
-  window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
+  window.addEventListener('rinovo:bird-landed', () => {
+    window._rinovo._birdHasLanded = true; // lets sound.js know bird has settled
+    safeInitScroll();
+  }, { once: true });
   setTimeout(() => safeInitScroll(), 5000); // safety if event never fires
 }
 
@@ -83,17 +86,8 @@ function handleOpeningVideo() {
   const VIDEO_DURATION = 12.44;   // confirmed via ffprobe
   const TRIGGER_AT     = VIDEO_DURATION - 1.25; // 11.19s — real bird exits frame
 
-  // ── Touch unlock fallback ─────────────────────────────────
-  // video.play() was already called in DOMContentLoaded (see bottom of file).
-  // If the browser still blocked it (rare on iOS with muted+playsinline),
-  // the first touch anywhere on screen is a user gesture that unlocks playback.
-  if (video.paused) {
-    const unlock = () => {
-      video.play().catch(() => showTapToStart(container, video));
-    };
-    document.addEventListener('touchstart', unlock, { once: true, passive: true });
-    document.addEventListener('click',      unlock, { once: true });
-  }
+  // video.play() was already called at DOMContentLoaded (earliest possible moment).
+  // The mobile source is 3MB — buffers fast enough for iOS autoplay without gesture.
 
   // Main trigger: at 11.19s the real bird exits frame upward
   video.addEventListener('timeupdate', () => {
@@ -237,15 +231,10 @@ export function initRevealAnimations() {
 // START
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Attempt video play IMMEDIATELY — before the GLB loads or any async work runs.
-  // iOS/Android with muted+playsinline will allow this at page-load time.
-  // Calling play() seconds later (after boot) misses the autoplay-friendly window.
+  // Call play() at the earliest possible moment — before boot() runs any async work.
+  // The mobile source is 3MB at 2 Mbps; it buffers fast enough to autoplay on iOS.
   const videoEl = document.getElementById('opening-video');
-  if (videoEl) {
-    videoEl.play().catch(() => {
-      // Silently ignored here — touch unlock is set up in handleOpeningVideo()
-    });
-  }
+  if (videoEl) videoEl.play().catch(() => {});
 
   boot().catch(console.error);
   initNavigation();
