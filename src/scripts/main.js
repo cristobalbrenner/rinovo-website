@@ -65,58 +65,55 @@ function handleOpeningVideo() {
   }
 
   // PATH A — video present
+  const loadingScreen = document.getElementById('loading-screen');
   let transformTriggered = false;
 
   const triggerTransformation = () => {
     if (transformTriggered) return;
     transformTriggered = true;
 
-    // Fade video out over 700ms — timed to coincide with mist bloom
+    // Fade video out — timed with mist bloom
     if (container) {
       container.style.transition = 'opacity 700ms ease';
       container.style.opacity = '0';
-      setTimeout(() => container.remove(), 750);
+      setTimeout(() => container?.remove(), 750);
     }
 
-    // Tell the 3D bird: video mode — emerge from center-top where real bird exited
+    // 3D bird emerges from center-top where real bird exited
     window._rinovo?.bird?.beginTransformation?.('video');
 
     window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
     setTimeout(() => safeInitScroll(), 3500);
   };
 
-  // Stall guard: if video hasn't started within 2.5s, skip it
-  const stallTimer = setTimeout(() => skipToEntrance(), 2500);
-
+  // ── Loading screen: hide once video has enough data to play ──
   video.addEventListener('canplay', () => {
     clearTimeout(stallTimer);
-    // Attempt play — browsers may block autoplay despite muted+playsinline
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Autoplay blocked — show a tap-to-start overlay
-        showTapToStart(container, video);
-      });
+    loadingScreen?.classList.add('is-complete');
+    setTimeout(() => loadingScreen?.remove(), 600);
+
+    // Only call play() if video somehow didn't start via autoplay
+    if (video.paused) {
+      video.play().catch(() => showTapToStart(container, video));
     }
   }, { once: true });
 
-  // ── Key timing: trigger 1.2s before end ─────────────────────
-  // The real bird exits the frame at ~11.2s (video is 12.44s).
-  // We bloom the mist as it flies UP — so the 3D bird emerges
-  // through the mist right where the real one disappeared.
-  // iOS timeupdate fires at ~4Hz so the trigger window is generous.
+  // ── Stall guard: skip video if it hasn't loaded in 7s ────────
+  // 7s gives mobile time to fetch the WebM (3.5MB on 4G ≈ 5-6s)
+  const stallTimer = setTimeout(() => skipToEntrance(), 7000);
+
+  // ── Key timing: mist blooms as real bird flies upward ────────
+  // Real bird exits frame at ~11.2s (clip is 12.44s).
+  // iOS timeupdate fires ~4Hz — trigger window is intentionally wide.
   const VIDEO_DURATION = 12.44;
-  const TRIGGER_AT = VIDEO_DURATION - 1.25; // ~11.19s
+  const TRIGGER_AT = VIDEO_DURATION - 1.25; // 11.19s
 
   video.addEventListener('timeupdate', () => {
-    if (video.currentTime >= TRIGGER_AT) {
-      triggerTransformation();
-    }
+    if (video.currentTime >= TRIGGER_AT) triggerTransformation();
   }, { passive: true });
 
-  // Safety caps
   video.addEventListener('ended', triggerTransformation, { once: true });
-  setTimeout(triggerTransformation, (VIDEO_DURATION + 1) * 1000);
+  setTimeout(triggerTransformation, (VIDEO_DURATION + 1.5) * 1000);
 
   // Error paths — treat same as no video
   // Guard: only fire once across all error sources
@@ -135,23 +132,28 @@ function handleOpeningVideo() {
 }
 
 // PATH B — skip video, go directly to bird entrance with mist
+let skipCalled = false;
 function skipToEntrance() {
+  if (skipCalled) return;
+  skipCalled = true;
+
   const container     = document.getElementById('opening-video-container');
   const loadingScreen = document.getElementById('loading-screen');
 
-  // Hide loading and video container
   loadingScreen?.classList.add('is-complete');
   setTimeout(() => loadingScreen?.remove(), 600);
 
-  container?.classList.add('is-hidden');
-  setTimeout(() => container?.remove(), 700);
+  if (container) {
+    container.style.transition = 'opacity 500ms ease';
+    container.style.opacity = '0';
+    setTimeout(() => container.remove(), 550);
+  }
 
-  // Trigger the mist + bird flight entrance (from off-screen right)
+  // Bird sweeps in from off-screen right (no video)
   window._rinovo?.bird?.beginTransformation?.('fallback');
 
-  // Enable scroll once bird lands (or after 3s max)
   window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
-  setTimeout(() => safeInitScroll(), 3000);
+  setTimeout(() => safeInitScroll(), 3500);
 }
 
 // ============================================================

@@ -233,6 +233,9 @@ function getFP(sectionId) {
 
 let currentSection = 'hero';
 let isFlying = false;
+// +1 = facing right (nose right), -1 = facing left (nose left)
+// idle loop reads this so the bird holds whichever way it last flew
+let facingDir = 1;
 
 function onBirdSectionChange(bird, sectionId) {
   if (sectionId === currentSection || isFlying) return;
@@ -244,11 +247,17 @@ function onBirdSectionChange(bird, sectionId) {
 function flyBirdTo(bird, targetPos) {
   isFlying = true;
   const startPos = bird.position.clone();
+
+  // Direction of travel determines which way the beak points
+  const dx = targetPos.x - startPos.x;
+  facingDir = dx >= 0 ? 1 : -1; // +1 right, -1 left
+  const faceY = facingDir * 1.25; // ±72° side profile
+
   const duration = 850;
   const startTime = performance.now();
 
   const mid = startPos.clone().lerp(targetPos, 0.5);
-  mid.y += 1.6;
+  mid.y += 1.4; // arc height
 
   function step(now) {
     const t = Math.min((now - startTime) / duration, 1);
@@ -258,11 +267,18 @@ function flyBirdTo(bird, targetPos) {
     bird.position.x = i*i*startPos.x + 2*i*e*mid.x + e*e*targetPos.x;
     bird.position.y = i*i*startPos.y + 2*i*e*mid.y + e*e*targetPos.y;
     bird.position.z = i*i*startPos.z + 2*i*e*mid.z + e*e*targetPos.z;
-    bird.rotation.z = Math.sin(e * Math.PI) * 0.45;
-    bird.rotation.y = -0.1 + Math.sin(now * 0.01) * 0.25;
 
-    if (t < 1) requestAnimationFrame(step);
-    else { bird.rotation.z = 0; isFlying = false; }
+    // Bank into the turn direction; hold side profile throughout
+    bird.rotation.y = faceY + Math.sin(e * Math.PI) * (facingDir * 0.08);
+    bird.rotation.z = Math.sin(e * Math.PI) * (facingDir * -0.35);
+    bird.rotation.x = 0.20 + Math.sin(e * Math.PI) * -0.06;
+
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      bird.rotation.set(0.20, faceY, 0);
+      isFlying = false;
+    }
   }
   requestAnimationFrame(step);
 }
@@ -274,21 +290,17 @@ function flyBirdTo(bird, targetPos) {
 // ============================================================
 export function birdEntranceAnimation(bird, { fromVideoExit = false, delay = 300 } = {}, onComplete) {
   const heroTarget = getFP('hero').clone();
+  const isMobile   = window.innerWidth < 768;
 
+  // Starting position
   if (fromVideoExit) {
-    // ── Video path ────────────────────────────────────────────
-    // Real bird exited upper-center of video frame.
-    // 3D equivalent: x≈0, y≈2.2 (top-center of viewport in world space)
-    bird.visible = false;
+    // Real bird exited upper-center of video — 3D equivalent: center-top
     bird.position.set(0.1, 2.4, 0);
-    bird.rotation.set(0.10, 1.25, 0.08); // already side-on, wings slightly open
   } else {
-    // ── No-video fallback path ────────────────────────────────
-    // Bird sweeps in from far right, below frame, banking upward
-    bird.visible = false;
-    bird.position.set(9, -0.8, 0);
-    bird.rotation.set(0.15, 0.4, 0.3);
+    // Sweep in from far off-screen right
+    bird.position.set(isMobile ? 4 : 9, -0.8, 0);
   }
+  bird.visible = false;
 
   setTimeout(() => {
     bird.visible = true;
@@ -296,36 +308,36 @@ export function birdEntranceAnimation(bird, { fromVideoExit = false, delay = 300
 
     const startPos = bird.position.clone();
 
-    // Bézier control point — shapes the flight arc
-    // Mobile arcs stay within the narrow portrait frustum
-    const isMobile = window.innerWidth < 768;
+    // Direction: startPos → heroTarget
+    const dx = heroTarget.x - startPos.x;
+    facingDir = dx >= 0 ? 1 : -1;
+    const faceY = facingDir * 1.25;
+
+    // Bézier arc control point
     const arc = fromVideoExit
-      ? new THREE.Vector3(isMobile ? 0.8 : 1.8, 2.0, 0)  // gentle downward-right from center-top
-      : new THREE.Vector3(isMobile ? 2.0 : 4.5, 2.8, 0); // sweeping arc from right
+      ? new THREE.Vector3(isMobile ? 0.6 : 1.6, 2.1, 0)  // gentle curve downward-right
+      : new THREE.Vector3(isMobile ? 2.2 : 5.0, 2.6, 0); // sweeping arc from right
 
     const duration  = fromVideoExit ? 1300 : 1700;
     const startTime = performance.now();
 
     function step(now) {
       const t = Math.min((now - startTime) / duration, 1);
-      // ease-in-out quad
       const e = t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t;
       const i = 1 - e;
 
-      // Quadratic Bézier position
       bird.position.x = i*i*startPos.x + 2*i*e*arc.x + e*e*heroTarget.x;
       bird.position.y = i*i*startPos.y + 2*i*e*arc.y + e*e*heroTarget.y;
 
-      // Rotation during flight — always stays in side profile
-      bird.rotation.y = 1.25 + Math.sin(e * Math.PI) * (fromVideoExit ? 0.08 : 0.20);
-      bird.rotation.z = Math.sin(e * Math.PI) * (fromVideoExit ? -0.20 : -0.50);
+      // Beak always faces travel direction, bank eases in/out
+      bird.rotation.y = faceY + Math.sin(e * Math.PI) * (facingDir * 0.10);
+      bird.rotation.z = Math.sin(e * Math.PI) * (facingDir * (fromVideoExit ? -0.18 : -0.45));
       bird.rotation.x = 0.20 + Math.sin(e * Math.PI) * -0.08;
 
       if (t < 1) {
         requestAnimationFrame(step);
       } else {
-        // Settled — idle oscillation takes over from here
-        bird.rotation.set(0.20, 1.25, 0);
+        bird.rotation.set(0.20, faceY, 0);
         isFlying = false;
         onComplete?.();
       }
@@ -417,11 +429,12 @@ function animate() {
 
   const bird = window._rinovo?.bird?.mesh;
   if (bird && !isFlying) {
-    // Gentle hover — oscillates around the landed side-profile pose
+    // Idle breathing — holds whichever direction the bird last flew
+    const faceY = facingDir * 1.25;
     bird.position.y += Math.sin(time * 0.9) * 0.0018;
-    bird.rotation.x =  0.20 + Math.sin(time * 0.38) * 0.03;  // slight nose nod
-    bird.rotation.y =  1.25 + Math.sin(time * 0.22) * 0.07;  // stays side-on ← KEY FIX
-    bird.rotation.z =         Math.sin(time * 0.17) * 0.025; // gentle wing sway
+    bird.rotation.x =  0.20 + Math.sin(time * 0.38) * 0.03;
+    bird.rotation.y =  faceY + Math.sin(time * 0.22) * 0.06; // side-on, direction-aware
+    bird.rotation.z =          Math.sin(time * 0.17) * 0.022;
     camera.position.x = Math.sin(time * 0.18) * 0.05;
     camera.position.y = Math.sin(time * 0.12) * 0.025;
   }
