@@ -19,8 +19,12 @@ import Layout from '../layouts/Layout.astro';
       playsinline
       preload="auto"
     >
-      <source src="/video/weaverbird-opening.webm" type="video/webm" />
-      <source src="/video/weaverbird-opening.mp4" type="video/mp4" />
+      <!-- Codec type hints let browsers skip unsupported formats silently
+           (no error event, no broken source fallback dance).
+           iOS Safari/Chrome: skips VP9 WebM, uses H.264 MP4 natively.
+           Desktop Chrome/Firefox: uses VP9 WebM (smaller, faster). -->
+      <source src="/video/weaverbird-opening.webm" type="video/webm; codecs=vp9" />
+      <source src="/video/weaverbird-opening.mp4"  type="video/mp4; codecs=avc1.42E01E" />
     </video>
   </div>
 

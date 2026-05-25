@@ -83,18 +83,17 @@ function handleOpeningVideo() {
   const VIDEO_DURATION = 12.44;   // confirmed via ffprobe
   const TRIGGER_AT     = VIDEO_DURATION - 1.25; // 11.19s — real bird exits frame
 
-  // ── Force play immediately ─────────────────────────────────
-  // autoplay + muted + playsinline should allow it, but mobile browsers
-  // often ignore the autoplay attribute. Call play() explicitly.
-  // If still blocked, unlock on the very first touch anywhere on screen —
-  // that gesture context lets us call play() without a visible button.
-  video.play().catch(() => {
+  // ── Touch unlock fallback ─────────────────────────────────
+  // video.play() was already called in DOMContentLoaded (see bottom of file).
+  // If the browser still blocked it (rare on iOS with muted+playsinline),
+  // the first touch anywhere on screen is a user gesture that unlocks playback.
+  if (video.paused) {
     const unlock = () => {
       video.play().catch(() => showTapToStart(container, video));
     };
     document.addEventListener('touchstart', unlock, { once: true, passive: true });
     document.addEventListener('click',      unlock, { once: true });
-  });
+  }
 
   // Main trigger: at 11.19s the real bird exits frame upward
   video.addEventListener('timeupdate', () => {
@@ -121,8 +120,12 @@ function handleOpeningVideo() {
     fadeOutContainer(container, 400);
     initiateEntrance('fallback');
   };
+  // Listen for error on the <video> element only — this fires when ALL
+  // sources have been exhausted. Do NOT listen on <source> elements:
+  // an individual source error just means the browser is trying the next
+  // source (e.g. WebM not supported → falls through to MP4). Listening
+  // on <source> errors would trigger the fallback prematurely on iOS.
   video.addEventListener('error', handleVideoError, { once: true });
-  video.querySelectorAll('source').forEach(s => s.addEventListener('error', handleVideoError, { once: true }));
 
   // Last resort: if video never reaches 11.19s (stalled / very slow connection)
   // Give it the full video duration + a buffer before giving up
@@ -234,6 +237,16 @@ export function initRevealAnimations() {
 // START
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Attempt video play IMMEDIATELY — before the GLB loads or any async work runs.
+  // iOS/Android with muted+playsinline will allow this at page-load time.
+  // Calling play() seconds later (after boot) misses the autoplay-friendly window.
+  const videoEl = document.getElementById('opening-video');
+  if (videoEl) {
+    videoEl.play().catch(() => {
+      // Silently ignored here — touch unlock is set up in handleOpeningVideo()
+    });
+  }
+
   boot().catch(console.error);
   initNavigation();
   initRevealAnimations();
