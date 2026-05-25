@@ -83,12 +83,18 @@ function handleOpeningVideo() {
   const VIDEO_DURATION = 12.44;   // confirmed via ffprobe
   const TRIGGER_AT     = VIDEO_DURATION - 1.25; // 11.19s — real bird exits frame
 
-  // Play if autoplay didn't kick in automatically
-  video.addEventListener('canplay', () => {
-    if (video.paused) {
+  // ── Force play immediately ─────────────────────────────────
+  // autoplay + muted + playsinline should allow it, but mobile browsers
+  // often ignore the autoplay attribute. Call play() explicitly.
+  // If still blocked, unlock on the very first touch anywhere on screen —
+  // that gesture context lets us call play() without a visible button.
+  video.play().catch(() => {
+    const unlock = () => {
       video.play().catch(() => showTapToStart(container, video));
-    }
-  }, { once: true });
+    };
+    document.addEventListener('touchstart', unlock, { once: true, passive: true });
+    document.addEventListener('click',      unlock, { once: true });
+  });
 
   // Main trigger: at 11.19s the real bird exits frame upward
   video.addEventListener('timeupdate', () => {
