@@ -12,160 +12,178 @@ import { initSound } from './sound.js';
 // ============================================================
 // BOOT SEQUENCE
 // ============================================================
-// Guard against initScroll being called more than once
 let scrollInitialised = false;
 function safeInitScroll() {
   if (scrollInitialised) return;
   scrollInitialised = true;
-  safeInitScroll();
+  initScroll(); // was incorrectly calling safeInitScroll() — infinite recursion
 }
 
 async function boot() {
-  // Initialize all systems in parallel
   await Promise.all([
-    initScene(),   // Three.js canvas + bird
+    initScene(),   // Three.js canvas + bird (bird starts hidden)
     initCursor(),  // Custom cursor
     initSound(),   // Howler.js audio
   ]);
 
-  // Handle opening video / bird entrance
   handleOpeningVideo();
-
-  // Portfolio long-press interactions
   initPortfolio();
+}
+
+// ============================================================
+// SINGLE ENTRANCE GUARD
+// ─────────────────────────────────────────────────────────────
+// Only one path (video or fallback) must ever run.
+// Both skipToEntrance and triggerTransformation check this flag
+// before doing anything — whichever fires first wins.
+// ============================================================
+let entranceInitiated = false;
+
+function initiateEntrance(mode) {
+  if (entranceInitiated) return;
+  entranceInitiated = true;
+
+  window._rinovo?.bird?.beginTransformation?.(mode);
+
+  // Unlock scroll when bird lands, with a generous safety timeout
+  window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
+  setTimeout(() => safeInitScroll(), 5000);
 }
 
 // ============================================================
 // OPENING VIDEO SEQUENCE
 // ─────────────────────────────────────────────────────────────
-// Two paths, same ending:
-//
 // PATH A — Real video present:
-//   video plays → bird flies off-screen → mist blooms
-//   → video fades → 3D bird materialises from mist → lands
+//   Loading screen visible → video has canplay → loading screen fades
+//   → video plays freely → at 11.19s real bird exits frame upward
+//   → mist blooms, video fades → 3D bird appears from center-top → lands
 //
-// PATH B — No video file yet (development / missing asset):
-//   mist blooms immediately → 3D bird flies in from right → lands
+// PATH B — No video source (development / missing asset):
+//   Loading screen fades immediately → mist blooms
+//   → 3D bird sweeps in from off-screen right → lands
 //
-// Both paths end with: bird landed, scroll unlocked, tagline visible.
+// Both paths end with: bird landed, scroll unlocked.
 // ============================================================
 function handleOpeningVideo() {
   const container = document.getElementById('opening-video-container');
   const video     = document.getElementById('opening-video');
 
-  // Check if the video element has a real source to try
-  // Note: src is on <source> children, not on the <video> element itself
+  // PATH B — no <source src="..."> found
   const firstSource = video?.querySelector('source[src]');
-  const hasSrc = !!firstSource;
-
-  if (!hasSrc) {
-    // PATH B — no video yet, go straight to bird entrance
-    skipToEntrance();
+  if (!firstSource) {
+    dismissLoadingScreen();
+    fadeOutContainer(container, 500);
+    initiateEntrance('fallback');
     return;
   }
 
-  // PATH A — video present
-  const loadingScreen = document.getElementById('loading-screen');
-  let transformTriggered = false;
+  // PATH A — video source exists, let it play
+  const VIDEO_DURATION = 12.44;  // seconds — confirmed via ffprobe
+  const TRIGGER_AT     = VIDEO_DURATION - 1.25; // 11.19s — real bird exits frame
 
-  const triggerTransformation = () => {
-    if (transformTriggered) return;
-    transformTriggered = true;
-
-    // Fade video out — timed with mist bloom
-    if (container) {
-      container.style.transition = 'opacity 700ms ease';
-      container.style.opacity = '0';
-      setTimeout(() => container?.remove(), 750);
-    }
-
-    // 3D bird emerges from center-top where real bird exited
-    window._rinovo?.bird?.beginTransformation?.('video');
-
-    window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
-    setTimeout(() => safeInitScroll(), 3500);
-  };
-
-  // ── Loading screen: hide once video has enough data to play ──
+  // ── Loading screen: hide when video can play ──────────────
+  // Runs regardless of stall or error — always dismisses the loading screen.
   video.addEventListener('canplay', () => {
-    clearTimeout(stallTimer);
-    loadingScreen?.classList.add('is-complete');
-    setTimeout(() => loadingScreen?.remove(), 600);
-
-    // Only call play() if video somehow didn't start via autoplay
+    dismissLoadingScreen();
+    // Only call play() if autoplay attribute didn't already start it
     if (video.paused) {
       video.play().catch(() => showTapToStart(container, video));
     }
   }, { once: true });
 
-  // ── Stall guard: skip video if it hasn't loaded in 7s ────────
-  // 7s gives mobile time to fetch the WebM (3.5MB on 4G ≈ 5-6s)
-  const stallTimer = setTimeout(() => skipToEntrance(), 7000);
-
-  // ── Key timing: mist blooms as real bird flies upward ────────
-  // Real bird exits frame at ~11.2s (clip is 12.44s).
-  // iOS timeupdate fires ~4Hz — trigger window is intentionally wide.
-  const VIDEO_DURATION = 12.44;
-  const TRIGGER_AT = VIDEO_DURATION - 1.25; // 11.19s
-
+  // ── Key timing: mist blooms as real bird flies upward ─────
+  // iOS timeupdate fires ~4Hz — the trigger window is wide enough.
   video.addEventListener('timeupdate', () => {
-    if (video.currentTime >= TRIGGER_AT) triggerTransformation();
+    if (video.currentTime >= TRIGGER_AT) {
+      clearSafetyTimer();
+      fadeOutContainer(container, 700);
+      initiateEntrance('video');
+    }
   }, { passive: true });
 
-  video.addEventListener('ended', triggerTransformation, { once: true });
-  setTimeout(triggerTransformation, (VIDEO_DURATION + 1.5) * 1000);
+  // Backup: if timeupdate misses the mark, ended always fires
+  video.addEventListener('ended', () => {
+    clearSafetyTimer();
+    fadeOutContainer(container, 700);
+    initiateEntrance('video');
+  }, { once: true });
 
-  // Error paths — treat same as no video
-  // Guard: only fire once across all error sources
+  // ── Error paths: treat as fallback ────────────────────────
   let errorHandled = false;
   const handleVideoError = () => {
     if (errorHandled) return;
     errorHandled = true;
-    clearTimeout(stallTimer);
-    skipToEntrance();
+    clearSafetyTimer();
+    dismissLoadingScreen();
+    fadeOutContainer(container, 500);
+    initiateEntrance('fallback');
   };
 
   video.addEventListener('error', handleVideoError, { once: true });
-  video.querySelectorAll('source').forEach(source => {
-    source.addEventListener('error', handleVideoError, { once: true });
+  video.querySelectorAll('source').forEach(s => {
+    s.addEventListener('error', handleVideoError, { once: true });
   });
+
+  // ── Last-resort safety timer ───────────────────────────────
+  // Only fires if the video completely fails to progress to 11.19s
+  // within 20s (covers the worst mobile/slow network case).
+  // The 7s timer from before was firing on normal connections because
+  // canplay on a 3.5MB WebM can take 5-8s on mobile 4G.
+  let safetyTimerId = setTimeout(() => {
+    dismissLoadingScreen();
+    fadeOutContainer(container, 500);
+    initiateEntrance('fallback');
+  }, 20000);
+
+  function clearSafetyTimer() {
+    clearTimeout(safetyTimerId);
+  }
 }
 
-// PATH B — skip video, go directly to bird entrance with mist
-let skipCalled = false;
-function skipToEntrance() {
-  if (skipCalled) return;
-  skipCalled = true;
+// ============================================================
+// HELPERS
+// ============================================================
 
-  const container     = document.getElementById('opening-video-container');
-  const loadingScreen = document.getElementById('loading-screen');
+function dismissLoadingScreen() {
+  const screen = document.getElementById('loading-screen');
+  if (!screen) return;
+  screen.classList.add('is-complete');
+  setTimeout(() => screen.remove(), 900);
+}
 
-  loadingScreen?.classList.add('is-complete');
-  setTimeout(() => loadingScreen?.remove(), 600);
+function fadeOutContainer(container, duration = 500) {
+  if (!container) return;
+  container.style.transition = `opacity ${duration}ms ease`;
+  container.style.opacity = '0';
+  setTimeout(() => container.remove(), duration + 60);
+}
 
-  if (container) {
-    container.style.transition = 'opacity 500ms ease';
-    container.style.opacity = '0';
-    setTimeout(() => container.remove(), 550);
-  }
-
-  // Bird sweeps in from off-screen right (no video)
-  window._rinovo?.bird?.beginTransformation?.('fallback');
-
-  window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
-  setTimeout(() => safeInitScroll(), 3500);
+function showTapToStart(container, video) {
+  const tap = document.createElement('button');
+  tap.textContent = 'Tap to begin';
+  tap.style.cssText = `
+    position:absolute; inset:0; width:100%; height:100%;
+    background:transparent; border:none; cursor:pointer;
+    color:var(--rinovo-cream); font-family:var(--font-hand);
+    font-size:1.4rem; letter-spacing:0.08em;
+  `;
+  container?.appendChild(tap);
+  tap.addEventListener('click', () => {
+    tap.remove();
+    video.play();
+  }, { once: true });
 }
 
 // ============================================================
 // SECTION NAVIGATION — dot nav + label
 // ============================================================
 export function initNavigation() {
-  const dots = document.querySelectorAll('.dot-nav__dot');
-  const sectionLabel = document.getElementById('section-label');
-  const sections = document.querySelectorAll('[data-section]');
+  const dots          = document.querySelectorAll('.dot-nav__dot');
+  const sectionLabel  = document.getElementById('section-label');
+  const sections      = document.querySelectorAll('[data-section]');
   const mobileProgress = document.getElementById('mobile-progress');
 
-  // Dot navigation click
+  // Dot click → smooth scroll to section
   dots.forEach(dot => {
     dot.addEventListener('click', () => {
       const target = document.getElementById(dot.dataset.section);
@@ -173,28 +191,23 @@ export function initNavigation() {
     });
   });
 
-  // IntersectionObserver: update active dot + section label
+  // IntersectionObserver: update active dot + section label + bird
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
         const sectionId = entry.target.dataset.section;
-        const label = entry.target.dataset.sectionLabel;
+        const label     = entry.target.dataset.sectionLabel;
 
-        // Update dots
         dots.forEach(dot => {
           dot.classList.toggle('is-active', dot.dataset.section === sectionId);
         });
 
-        // Update section label
         if (sectionLabel && label) {
           sectionLabel.textContent = label;
           sectionLabel.classList.add('is-visible');
         }
 
-        // Notify bird of section change
         window._rinovo?.bird?.onSectionChange?.(sectionId);
-
-        // Update body background for dark/light transitions
         document.body.dataset.activeSection = sectionId;
       }
     });
@@ -202,22 +215,23 @@ export function initNavigation() {
 
   sections.forEach(section => observer.observe(section));
 
-  // Mobile progress bar
+  // Mobile scroll progress bar
   window.addEventListener('scroll', () => {
     if (!mobileProgress) return;
     const scrolled = window.scrollY;
     const total = document.documentElement.scrollHeight - window.innerHeight;
-    const progress = (scrolled / total) * 100;
-    mobileProgress.style.width = `${progress}%`;
+    mobileProgress.style.width = `${(scrolled / total) * 100}%`;
   }, { passive: true });
 }
 
 // ============================================================
-// PENCIL DIVIDER & REVEAL ANIMATIONS
-// (Fallback if GSAP ScrollTrigger is unavailable)
+// REVEAL ANIMATIONS
+// (IntersectionObserver-based fallback for .reveal-fade elements)
 // ============================================================
 export function initRevealAnimations() {
-  const revealElements = document.querySelectorAll('.reveal-fade, .pencil-divider, .portfolio__brushstroke, .philosophy__underline-word');
+  const revealElements = document.querySelectorAll(
+    '.reveal-fade, .pencil-divider, .portfolio__brushstroke, .philosophy__underline-word'
+  );
 
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -231,25 +245,6 @@ export function initRevealAnimations() {
   }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
 
   revealElements.forEach(el => revealObserver.observe(el));
-}
-
-// ============================================================
-// TAP-TO-START (autoplay blocked fallback — rare on modern mobile)
-// ============================================================
-function showTapToStart(container, video) {
-  const tap = document.createElement('button');
-  tap.textContent = 'Tap to begin';
-  tap.style.cssText = `
-    position:absolute; inset:0; width:100%; height:100%;
-    background:transparent; border:none; cursor:pointer;
-    color:var(--rinovo-cream); font-family:var(--font-hand);
-    font-size:1.4rem; letter-spacing:0.08em;
-  `;
-  container.appendChild(tap);
-  tap.addEventListener('click', () => {
-    tap.remove();
-    video.play();
-  }, { once: true });
 }
 
 // ============================================================

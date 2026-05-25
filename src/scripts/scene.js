@@ -42,6 +42,7 @@ export async function initScene() {
 
   // Try loading the real GLB — fall back to placeholder on failure
   const bird = await loadBird();
+  bird.visible = false; // Hidden until entrance animation begins (during video)
   scene.add(bird);
 
   window._rinovo.bird = {
