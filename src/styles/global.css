@@ -569,6 +569,7 @@ button {
   inset: 0;
   z-index: 900;
   background: var(--rinovo-charcoal);
+  will-change: opacity;
   display: flex;
   align-items: center;
   justify-content: center;

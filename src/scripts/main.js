@@ -71,34 +71,52 @@ function handleOpeningVideo() {
     if (transformTriggered) return;
     transformTriggered = true;
 
-    // Fade video container out
-    container?.classList.add('is-hidden');
+    // Fade video out over 700ms — timed to coincide with mist bloom
+    if (container) {
+      container.style.transition = 'opacity 700ms ease';
+      container.style.opacity = '0';
+      setTimeout(() => container.remove(), 750);
+    }
 
-    // Tell the 3D bird to begin its mist-entrance sequence
-    window._rinovo?.bird?.beginTransformation?.();
+    // Tell the 3D bird: video mode — emerge from center-top where real bird exited
+    window._rinovo?.bird?.beginTransformation?.('video');
 
-    // Wait for bird to land, then enable scroll
-    window.addEventListener('rinovo:bird-landed', () => {
-      safeInitScroll();
-      container?.remove();
-    }, { once: true });
-
-    // Safety: unlock scroll after 3s even if event doesn't fire
-    setTimeout(() => safeInitScroll(), 3000);
+    window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
+    setTimeout(() => safeInitScroll(), 3500);
   };
 
-  // Fallback: if video stalls for 2.5s on load, skip it
+  // Stall guard: if video hasn't started within 2.5s, skip it
   const stallTimer = setTimeout(() => skipToEntrance(), 2500);
 
   video.addEventListener('canplay', () => {
     clearTimeout(stallTimer);
+    // Attempt play — browsers may block autoplay despite muted+playsinline
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Autoplay blocked — show a tap-to-start overlay
+        showTapToStart(container, video);
+      });
+    }
   }, { once: true });
 
-  // Primary trigger: video ends naturally
-  video.addEventListener('ended', triggerTransformation, { once: true });
+  // ── Key timing: trigger 1.2s before end ─────────────────────
+  // The real bird exits the frame at ~11.2s (video is 12.44s).
+  // We bloom the mist as it flies UP — so the 3D bird emerges
+  // through the mist right where the real one disappeared.
+  // iOS timeupdate fires at ~4Hz so the trigger window is generous.
+  const VIDEO_DURATION = 12.44;
+  const TRIGGER_AT = VIDEO_DURATION - 1.25; // ~11.19s
 
-  // Safety cap: 13s maximum regardless
-  setTimeout(triggerTransformation, 13000);
+  video.addEventListener('timeupdate', () => {
+    if (video.currentTime >= TRIGGER_AT) {
+      triggerTransformation();
+    }
+  }, { passive: true });
+
+  // Safety caps
+  video.addEventListener('ended', triggerTransformation, { once: true });
+  setTimeout(triggerTransformation, (VIDEO_DURATION + 1) * 1000);
 
   // Error paths — treat same as no video
   // Guard: only fire once across all error sources
@@ -128,8 +146,8 @@ function skipToEntrance() {
   container?.classList.add('is-hidden');
   setTimeout(() => container?.remove(), 700);
 
-  // Trigger the mist + bird flight entrance
-  window._rinovo?.bird?.beginTransformation?.();
+  // Trigger the mist + bird flight entrance (from off-screen right)
+  window._rinovo?.bird?.beginTransformation?.('fallback');
 
   // Enable scroll once bird lands (or after 3s max)
   window.addEventListener('rinovo:bird-landed', () => safeInitScroll(), { once: true });
@@ -211,6 +229,25 @@ export function initRevealAnimations() {
   }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
 
   revealElements.forEach(el => revealObserver.observe(el));
+}
+
+// ============================================================
+// TAP-TO-START (autoplay blocked fallback — rare on modern mobile)
+// ============================================================
+function showTapToStart(container, video) {
+  const tap = document.createElement('button');
+  tap.textContent = 'Tap to begin';
+  tap.style.cssText = `
+    position:absolute; inset:0; width:100%; height:100%;
+    background:transparent; border:none; cursor:pointer;
+    color:var(--rinovo-cream); font-family:var(--font-hand);
+    font-size:1.4rem; letter-spacing:0.08em;
+  `;
+  container.appendChild(tap);
+  tap.addEventListener('click', () => {
+    tap.remove();
+    video.play();
+  }, { once: true });
 }
 
 // ============================================================

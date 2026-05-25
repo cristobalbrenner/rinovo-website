@@ -47,7 +47,7 @@ export async function initScene() {
   window._rinovo.bird = {
     mesh: bird,
     onSectionChange: (id) => onBirdSectionChange(bird, id),
-    beginTransformation: () => beginBirdTransformation(bird),
+    beginTransformation: (mode) => beginBirdTransformation(bird, mode),
   };
 
   window.addEventListener('resize', onResize);
@@ -96,27 +96,24 @@ function loadBird() {
       (gltf) => {
         const model = gltf.scene;
 
-        // Auto-scale — half the previous size (targetSize 0.9 instead of 1.8)
+        // Scale — smaller on mobile (portrait frustum is much narrower)
+        const isMobile = window.innerWidth < 768;
+        const targetSize = isMobile ? 0.58 : 0.9;
         const box = new THREE.Box3().setFromObject(model);
         const maxDim = Math.max(...box.getSize(new THREE.Vector3()).toArray());
-        const scale = 0.9 / maxDim;
+        const scale = targetSize / maxDim;
         model.scale.setScalar(scale);
 
         // Center at origin before repositioning
         const center = box.getCenter(new THREE.Vector3());
         model.position.sub(center.multiplyScalar(scale));
 
-        // Keep Meshy's original textures/materials — they already have the logo colors.
-        // Just ensure meshes respond well to our warm lighting.
         enhanceMeshLighting(model);
 
-        // Position: upper-right of hero, in a banking turn showing full wing span
-        model.position.set(2.6, 1.1, 0);
-        model.rotation.set(
-          0.20,   // X: nose pitched slightly down — in-flight attitude
-          1.25,   // Y: ~72° — almost fully sideways, wing silhouette clearly visible
-         -0.35    // Z: banking roll — wing tilts toward viewer, dynamic flight pose
-        );
+        // Starting position = hero focal point for this device
+        const heroFP = isMobile ? FOCAL_POINTS.hero_mobile : FOCAL_POINTS.hero;
+        model.position.copy(heroFP);
+        model.rotation.set(0.20, 1.25, 0);
 
         console.log('✓ Weaverbird GLB loaded');
         resolve(model);
@@ -210,14 +207,29 @@ function createPlaceholderBird() {
 
 // ============================================================
 // FOCAL POINTS per section
+// Desktop: wide frustum (~±6 units horizontal)
+// Mobile:  narrow portrait frustum (~±1.6 units horizontal)
 // ============================================================
 const FOCAL_POINTS = {
-  hero:       new THREE.Vector3( 2.8,  1.2, 0),
-  philosophy: new THREE.Vector3(-3.2,  0.8, 0),
-  process:    new THREE.Vector3( 0.0,  1.2, 0),
-  portfolio:  new THREE.Vector3( 2.6,  1.6, 0),
-  contact:    new THREE.Vector3( 0.0, -1.8, 0),
+  // — Desktop —
+  hero:       new THREE.Vector3( 2.6,  1.1, 0),
+  philosophy: new THREE.Vector3(-2.4,  0.8, 0),
+  process:    new THREE.Vector3( 0.0,  1.0, 0),
+  portfolio:  new THREE.Vector3( 2.4,  1.4, 0),
+  contact:    new THREE.Vector3( 0.0, -1.6, 0),
+  // — Mobile (portrait) — keep x within ±1.4 so bird stays on-screen —
+  hero_mobile:       new THREE.Vector3( 1.0,  1.0, 0),
+  philosophy_mobile: new THREE.Vector3(-0.8,  0.8, 0),
+  process_mobile:    new THREE.Vector3( 0.0,  0.8, 0),
+  portfolio_mobile:  new THREE.Vector3( 0.8,  1.2, 0),
+  contact_mobile:    new THREE.Vector3( 0.0, -1.2, 0),
 };
+
+function getFP(sectionId) {
+  const mobile = window.innerWidth < 768;
+  const key = mobile ? `${sectionId}_mobile` : sectionId;
+  return FOCAL_POINTS[key] || FOCAL_POINTS[sectionId];
+}
 
 let currentSection = 'hero';
 let isFlying = false;
@@ -225,7 +237,7 @@ let isFlying = false;
 function onBirdSectionChange(bird, sectionId) {
   if (sectionId === currentSection || isFlying) return;
   currentSection = sectionId;
-  const target = FOCAL_POINTS[sectionId];
+  const target = getFP(sectionId);
   if (target) flyBirdTo(bird, target);
 }
 
@@ -256,82 +268,98 @@ function flyBirdTo(bird, targetPos) {
 }
 
 // ============================================================
-// BIRD ENTRANCE — called once on page load after video (or immediately)
-// Bird starts off-screen right, sweeps in from flight, lands in hero.
+// BIRD ENTRANCE — two starting positions:
+//   fromVideoExit = true  → bird emerges from center-top (where real bird exited video)
+//   fromVideoExit = false → bird sweeps in from off-screen right (no-video fallback)
 // ============================================================
-export function birdEntranceAnimation(bird, onComplete) {
-  // Start hidden, far off-screen right
-  bird.visible = false;
-  bird.position.set(8, -0.5, 0);
-  bird.rotation.set(0.1, -0.6, 0.2);
+export function birdEntranceAnimation(bird, { fromVideoExit = false, delay = 300 } = {}, onComplete) {
+  const heroTarget = getFP('hero').clone();
 
-  // Small delay then fly in
+  if (fromVideoExit) {
+    // ── Video path ────────────────────────────────────────────
+    // Real bird exited upper-center of video frame.
+    // 3D equivalent: x≈0, y≈2.2 (top-center of viewport in world space)
+    bird.visible = false;
+    bird.position.set(0.1, 2.4, 0);
+    bird.rotation.set(0.10, 1.25, 0.08); // already side-on, wings slightly open
+  } else {
+    // ── No-video fallback path ────────────────────────────────
+    // Bird sweeps in from far right, below frame, banking upward
+    bird.visible = false;
+    bird.position.set(9, -0.8, 0);
+    bird.rotation.set(0.15, 0.4, 0.3);
+  }
+
   setTimeout(() => {
     bird.visible = true;
     isFlying = true;
 
-    const heroTarget = FOCAL_POINTS.hero.clone();
-    const startPos   = bird.position.clone();
+    const startPos = bird.position.clone();
 
-    // Arc: sweeps up from lower-right, crests, descends to hero position
-    const arc = new THREE.Vector3(
-      (startPos.x + heroTarget.x) / 2 - 0.5,
-       Math.max(startPos.y, heroTarget.y) + 2.2,
-       0
-    );
+    // Bézier control point — shapes the flight arc
+    // Mobile arcs stay within the narrow portrait frustum
+    const isMobile = window.innerWidth < 768;
+    const arc = fromVideoExit
+      ? new THREE.Vector3(isMobile ? 0.8 : 1.8, 2.0, 0)  // gentle downward-right from center-top
+      : new THREE.Vector3(isMobile ? 2.0 : 4.5, 2.8, 0); // sweeping arc from right
 
-    const duration  = 1600; // ms — cinematic, unhurried
+    const duration  = fromVideoExit ? 1300 : 1700;
     const startTime = performance.now();
 
     function step(now) {
-      const raw = (now - startTime) / duration;
-      const t   = Math.min(raw, 1);
-
-      // Smooth ease: accelerate out, decelerate in
+      const t = Math.min((now - startTime) / duration, 1);
+      // ease-in-out quad
       const e = t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t;
       const i = 1 - e;
 
-      // Quadratic Bézier
+      // Quadratic Bézier position
       bird.position.x = i*i*startPos.x + 2*i*e*arc.x + e*e*heroTarget.x;
       bird.position.y = i*i*startPos.y + 2*i*e*arc.y + e*e*heroTarget.y;
 
-      // Wing-bank during flight, level out on landing
-      bird.rotation.z = Math.sin(e * Math.PI) * -0.55;
-      // Y rotation: start facing into flight direction, settle to side profile
-      bird.rotation.y = -0.6 + e * 1.85; // arrives at ~1.25 (side-on)
-      bird.rotation.x = 0.20 + Math.sin(e * Math.PI) * -0.1;
+      // Rotation during flight — always stays in side profile
+      bird.rotation.y = 1.25 + Math.sin(e * Math.PI) * (fromVideoExit ? 0.08 : 0.20);
+      bird.rotation.z = Math.sin(e * Math.PI) * (fromVideoExit ? -0.20 : -0.50);
+      bird.rotation.x = 0.20 + Math.sin(e * Math.PI) * -0.08;
 
       if (t < 1) {
         requestAnimationFrame(step);
       } else {
-        // Landed — restore idle rotation targets
-        bird.rotation.set(0.20, 1.25, -0.35);
+        // Settled — idle oscillation takes over from here
+        bird.rotation.set(0.20, 1.25, 0);
         isFlying = false;
         onComplete?.();
       }
     }
     requestAnimationFrame(step);
-  }, 400); // 400ms after mist clears
+  }, delay);
 }
 
-function beginBirdTransformation(bird) {
+// Called by main.js — orchestrates mist + bird entrance
+// mode: 'video' | 'fallback'
+function beginBirdTransformation(bird, mode = 'fallback') {
   const mist = document.getElementById('mist-overlay');
+
   if (mist) {
-    // Bloom mist in
-    mist.style.transition = 'opacity 400ms cubic-bezier(0.4,0,0.2,1)';
+    mist.style.transition = 'opacity 500ms cubic-bezier(0.4,0,0.2,1)';
     mist.style.opacity = '1';
-    // Clear mist while bird is mid-entrance
+    // Start clearing once bird is in motion
     setTimeout(() => {
-      mist.style.transition = 'opacity 800ms cubic-bezier(0.4,0,0.2,1)';
+      mist.style.transition = 'opacity 900ms cubic-bezier(0.25,0.1,0.1,1)';
       mist.style.opacity = '0';
-    }, 600);
+    }, 550);
   }
 
-  // Trigger the entrance flight
-  birdEntranceAnimation(bird, () => {
-    // Bird has landed — signal main.js we're ready for scroll
-    window.dispatchEvent(new CustomEvent('rinovo:bird-landed'));
-  });
+  birdEntranceAnimation(
+    bird,
+    { fromVideoExit: mode === 'video', delay: 280 },
+    () => window.dispatchEvent(new CustomEvent('rinovo:bird-landed'))
+  );
+}
+
+// Export so main.js can call with the right mode
+export function triggerBirdEntrance(mode) {
+  const bird = window._rinovo?.bird?.mesh;
+  if (bird) beginBirdTransformation(bird, mode);
 }
 
 // ============================================================
@@ -389,10 +417,11 @@ function animate() {
 
   const bird = window._rinovo?.bird?.mesh;
   if (bird && !isFlying) {
+    // Gentle hover — oscillates around the landed side-profile pose
     bird.position.y += Math.sin(time * 0.9) * 0.0018;
-    bird.rotation.y = -0.1 + Math.sin(time * 0.25) * 0.12;
-    bird.rotation.x =  0.05 + Math.sin(time * 0.4)  * 0.04;
-    bird.rotation.z = Math.sin(time * 0.18) * 0.03;
+    bird.rotation.x =  0.20 + Math.sin(time * 0.38) * 0.03;  // slight nose nod
+    bird.rotation.y =  1.25 + Math.sin(time * 0.22) * 0.07;  // stays side-on ← KEY FIX
+    bird.rotation.z =         Math.sin(time * 0.17) * 0.025; // gentle wing sway
     camera.position.x = Math.sin(time * 0.18) * 0.05;
     camera.position.y = Math.sin(time * 0.12) * 0.025;
   }
